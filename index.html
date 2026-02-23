@@ -27,12 +27,13 @@
  </head>
  <body class="h-full bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
   <div id="app" class="h-full overflow-auto">
-   <div class="min-h-full p-4 md:p-6 lg:p-8"><!-- Header -->
+   <div class="min-h-full p-4 md:p-6 lg:p-8">
+    <!-- Header -->
     <header class="text-center mb-6">
      <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Familiar</h1>
      <p class="text-slate-500 mt-1">Gerencie entradas, saídas e contas com facilidade</p>
     </header><!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6 max-w-6xl mx-auto">
      <div class="income-gradient rounded-2xl p-5 text-white shadow-lg">
       <div>
        <p class="text-sm opacity-90">💵 Total Entrado</p>
@@ -47,14 +48,26 @@
      </div>
      <div class="pending-gradient rounded-2xl p-5 text-white shadow-lg">
       <div>
-       <p class="text-sm opacity-90">⏳ Contas Pendentes</p>
+       <p class="text-sm opacity-90">⏳ Pendentes</p>
        <p id="pending-bills" class="text-2xl font-bold">R$ 0,00</p>
       </div>
      </div>
      <div class="account-gradient rounded-2xl p-5 text-white shadow-lg">
       <div>
-       <p class="text-sm opacity-90">🏦 Saldo em Conta</p>
+       <p class="text-sm opacity-90">🏦 Saldo</p>
        <p id="account-balance" class="text-2xl font-bold">R$ 0,00</p>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-5 text-white shadow-lg">
+      <div>
+       <p class="text-sm opacity-90">📌 Próxima Conta</p>
+       <p id="next-bill" class="text-lg font-bold truncate">-</p>
+      </div>
+     </div>
+     <div class="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl p-5 text-white shadow-lg">
+      <div>
+       <p class="text-sm opacity-90">💔 Resta Pagar</p>
+       <p id="remaining-balance" class="text-2xl font-bold">R$ 0,00</p>
       </div>
      </div>
     </div><!-- Controls & Filters -->
@@ -106,7 +119,7 @@
       </div>
       <div id="transactions-container">
        <p id="empty-state" class="text-center text-slate-400 py-8">Nenhuma transação registrada ainda.<br>
-        Adicione sua primeira transação acima! 🚀</p>
+         Adicione sua primeira transação acima! 🚀</p>
       </div>
      </div>
     </div><!-- Reports Tab -->
@@ -125,18 +138,7 @@
      </div>
     </div>
    </div>
-  </div><!-- Notification Modal -->
-  <div id="notification-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-   <div id="notification-content" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-bounce-in">
-    <div class="flex items-start gap-4">
-     <div id="notification-icon" class="text-3xl flex-shrink-0"></div>
-     <div class="flex-1">
-      <h3 id="notification-title" class="text-lg font-semibold text-slate-800 mb-1"></h3>
-      <p id="notification-message" class="text-slate-600 text-sm break-words"></p>
-     </div>
-    </div><button onclick="closeNotification()" class="w-full mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">OK</button>
-   </div>
-  </div><!-- Delete Confirmation Modal -->
+  </div><!-- Delete Modal -->
   <div id="delete-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
     <h3 class="text-lg font-semibold text-slate-800 mb-2">🗑️ Confirmar Exclusão</h3>
@@ -145,52 +147,47 @@
      <button id="cancel-delete" class="flex-1 py-2 px-4 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition-colors">Cancelar</button> <button id="confirm-delete" class="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">Excluir</button>
     </div>
    </div>
+  </div><!-- Payment Modal -->
+  <div id="payment-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+   <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+    <h3 class="text-lg font-semibold text-slate-800 mb-4">💰 Pagamento Parcial</h3>
+    <div id="payment-info" class="space-y-3 mb-4 bg-slate-50 p-4 rounded-lg">
+     <p class="text-sm"><span class="text-slate-600">📝 Conta:</span> <span id="payment-description" class="font-semibold text-slate-800"></span></p>
+     <p class="text-sm"><span class="text-slate-600">💵 Total:</span> <span id="payment-total" class="font-semibold text-red-600"></span></p>
+     <p class="text-sm"><span class="text-slate-600">✅ Já Pago:</span> <span id="payment-paid" class="font-semibold text-green-600"></span></p>
+     <p class="text-sm"><span class="text-slate-600">❌ Resta:</span> <span id="payment-remaining" class="font-semibold text-orange-600"></span></p>
+    </div>
+    <div class="mb-4"><label class="block text-sm text-slate-600 mb-2">Quanto deseja pagar?</label> <input type="number" id="payment-amount" step="0.01" min="0" placeholder="0,00" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-green-500 outline-none">
+    </div>
+    <div class="flex gap-3"><button id="cancel-payment" class="flex-1 py-2 px-4 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition-colors">Cancelar</button> <button id="confirm-payment" class="flex-1 py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">Confirmar</button>
+    </div>
+   </div>
   </div>
   <script>
-    // State
     let allTransactions = [];
     let currentFilter = null;
     let pendingDeleteRecord = null;
+    let pendingPaymentRecord = null;
     let initialBalance = 0;
-    let isSubmitting = false;
 
     const defaultConfig = {
       app_title: 'Controle Financeiro Familiar',
       initial_balance: '0'
     };
 
-    // Show notification
-    function showNotification(icon, title, message) {
-      document.getElementById('notification-icon').textContent = icon;
-      document.getElementById('notification-title').textContent = title;
-      document.getElementById('notification-message').textContent = message;
-      document.getElementById('notification-modal').classList.remove('hidden');
-      document.getElementById('notification-modal').classList.add('flex');
-    }
-
-    // Close notification
-    function closeNotification() {
-      document.getElementById('notification-modal').classList.add('hidden');
-      document.getElementById('notification-modal').classList.remove('flex');
-    }
-
-    // Format currency
     function formatCurrency(value) {
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     }
 
-    // Format date
     function formatDate(dateStr) {
       const date = new Date(dateStr + 'T12:00:00');
       return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
 
-    // Get month from date
     function getMonth(dateStr) {
       return dateStr.substring(0, 7);
     }
 
-    // Switch tabs
     function switchTab(tab) {
       document.getElementById('transactions-tab').classList.add('hidden');
       document.getElementById('reports-tab').classList.add('hidden');
@@ -206,35 +203,32 @@
       }
     }
 
-    // Update category field visibility
     function updateCategoryField() {
       const type = document.getElementById('type-input').value;
       const categoryField = document.getElementById('category-field');
       categoryField.style.display = (type === 'income') ? 'block' : 'none';
     }
 
-    // Calculate totals
     function calculateTotals(transactions) {
-      let income = 0, expense = 0, pendingBills = 0, paidCount = 0, billCount = 0;
+      let income = 0, expense = 0, pendingBills = 0;
       
       transactions.forEach(t => {
         if (t.type === 'income') income += t.value;
         else if (t.type === 'expense') expense += t.value;
         else if (t.type === 'bill') {
-          billCount++;
-          if (!t.paid) pendingBills += t.value;
           if (t.paid) {
             expense += t.value;
-            paidCount++;
+          } else {
+            const remaining = t.value - (t.paid_amount || 0);
+            if (remaining > 0) pendingBills += remaining;
           }
         }
       });
       
       const accountBalance = initialBalance + income - expense;
-      return { income, expense, pendingBills, accountBalance, paidCount, billCount };
+      return { income, expense, pendingBills, accountBalance };
     }
 
-    // Group by date
     function groupByDate(transactions) {
       const groups = {};
       transactions.forEach(t => {
@@ -244,7 +238,6 @@
       return groups;
     }
 
-    // Render transactions
     function renderTransactions() {
       const container = document.getElementById('transactions-container');
       const emptyState = document.getElementById('empty-state');
@@ -265,13 +258,6 @@
 
       emptyState.classList.add('hidden');
       updateDashboard(filtered);
-
-      const totals = calculateTotals(filtered);
-      if (totals.billCount > 0) {
-        document.getElementById('paid-summary').textContent = `✅ ${totals.paidCount}/${totals.billCount} contas pagas`;
-      } else {
-        document.getElementById('paid-summary').textContent = '';
-      }
 
       const grouped = groupByDate(filtered);
       const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
@@ -299,25 +285,25 @@
           const bgClass = isIncome ? 'border-l-green-500' : isBill ? 'border-l-orange-400' : 'border-l-red-400';
           const valueClass = isIncome ? 'text-green-600' : 'text-red-500';
           const prefix = isIncome ? '+' : '-';
-          const paidClass = (isBill && t.paid) ? 'opacity-60 line-through' : '';
+          const remaining = isBill ? (t.value - (t.paid_amount || 0)) : 0;
+          const isPaid100 = isBill && remaining <= 0;
           
           html += `
             <div class="flex items-center justify-between bg-white rounded-lg px-4 py-3 border-l-4 ${bgClass} shadow-sm hover:shadow-md transition-shadow" data-id="${t.__backendId}">
               <div class="flex items-center gap-3 flex-1">
-                ${isBill ? `
-                  <input type="checkbox" class="checkbox-custom" ${t.paid ? 'checked' : ''} onchange="togglePaid('${t.__backendId}', this.checked)">
-                ` : '<span class="w-5"></span>'}
+                ${isBill ? `<input type="checkbox" class="checkbox-custom" ${isPaid100 ? 'checked' : ''} disabled>` : '<span class="w-5"></span>'}
                 <div class="flex-1">
-                  <p class="font-medium text-slate-700 ${paidClass}">${t.description}</p>
+                  <p class="font-medium text-slate-700">${t.description}</p>
                   <p class="text-xs text-slate-500">${t.category || 'Sem categoria'}</p>
+                  ${isBill && (t.paid_amount || 0) > 0 ? `<p class="text-xs text-green-600">💚 Pago: ${formatCurrency(t.paid_amount)}</p>` : ''}
+                  ${isBill && remaining > 0 ? `<p class="text-xs text-red-500">❌ Resta: ${formatCurrency(remaining)}</p>` : ''}
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <span class="font-semibold ${valueClass} ${paidClass}">${prefix}${formatCurrency(t.value)}</span>
-                <button onclick="showDeleteModal('${t.__backendId}')" class="text-slate-400 hover:text-red-500 transition-colors p-1">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                  </svg>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold ${valueClass}">${prefix}${formatCurrency(t.value)}</span>
+                ${isBill && !isPaid100 ? `<button onclick="showPaymentModal('${t.__backendId}')" class="text-green-500 hover:text-green-700 p-1" title="Pagar">💚</button>` : ''}
+                <button onclick="showDeleteModal('${t.__backendId}')" class="text-slate-400 hover:text-red-500 p-1">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                 </button>
               </div>
             </div>
@@ -330,49 +316,37 @@
       container.innerHTML = html;
     }
 
-    // Update dashboard
     function updateDashboard(filtered) {
       const totals = calculateTotals(filtered);
       document.getElementById('total-income').textContent = formatCurrency(totals.income);
       document.getElementById('total-expense').textContent = formatCurrency(totals.expense);
       document.getElementById('pending-bills').textContent = formatCurrency(totals.pendingBills);
       document.getElementById('account-balance').textContent = formatCurrency(totals.accountBalance);
-    }
 
-    // Toggle paid
-    async function togglePaid(id, paid) {
-      const record = allTransactions.find(t => t.__backendId === id);
-      if (record) {
-        const oldPaid = record.paid;
-        record.paid = paid;
-        const result = await window.dataSdk.update(record);
-        if (result.isOk) {
-          showNotification(paid ? '✅' : '⏳', paid ? 'Conta Paga!' : 'Conta Despagada', `${record.description} marcada como ${paid ? 'paga' : 'pendente'}`);
-        } else {
-          record.paid = oldPaid;
-          renderTransactions();
-          showNotification('❌', 'Erro', `Erro ao atualizar: ${result.error.message}`);
-        }
+      const bills = filtered.filter(t => t.type === 'bill' && (t.value - (t.paid_amount || 0)) > 0);
+      if (bills.length > 0) {
+        bills.sort((a, b) => a.date.localeCompare(b.date));
+        document.getElementById('next-bill').textContent = bills[0].description;
+        const remaining = bills[0].value - (bills[0].paid_amount || 0);
+        document.getElementById('remaining-balance').textContent = formatCurrency(remaining);
+      } else {
+        document.getElementById('next-bill').textContent = '✅ Nenhuma';
+        document.getElementById('remaining-balance').textContent = 'R$ 0,00';
       }
     }
 
-    // Show delete modal
     function showDeleteModal(id) {
       pendingDeleteRecord = allTransactions.find(t => t.__backendId === id);
       if (pendingDeleteRecord) {
         document.getElementById('delete-modal').classList.remove('hidden');
-        document.getElementById('delete-modal').classList.add('flex');
       }
     }
 
-    // Hide delete modal
     function hideDeleteModal() {
       document.getElementById('delete-modal').classList.add('hidden');
-      document.getElementById('delete-modal').classList.remove('flex');
       pendingDeleteRecord = null;
     }
 
-    // Confirm delete
     async function confirmDelete() {
       if (pendingDeleteRecord) {
         const btn = document.getElementById('confirm-delete');
@@ -384,16 +358,63 @@
         btn.textContent = 'Excluir';
         btn.disabled = false;
         
-        if (result.isOk) {
-          showNotification('🗑️', 'Transação Excluída', `${pendingDeleteRecord.description} foi removida com sucesso`);
-        } else {
-          showNotification('❌', 'Erro', `Erro ao excluir: ${result.error.message}`);
-        }
+        if (!result.isOk) console.error('Erro ao excluir');
         hideDeleteModal();
       }
     }
 
-    // Render reports
+    function showPaymentModal(id) {
+      pendingPaymentRecord = allTransactions.find(t => t.__backendId === id);
+      if (pendingPaymentRecord) {
+        const remaining = pendingPaymentRecord.value - (pendingPaymentRecord.paid_amount || 0);
+        document.getElementById('payment-description').textContent = pendingPaymentRecord.description;
+        document.getElementById('payment-total').textContent = formatCurrency(pendingPaymentRecord.value);
+        document.getElementById('payment-paid').textContent = formatCurrency(pendingPaymentRecord.paid_amount || 0);
+        document.getElementById('payment-remaining').textContent = formatCurrency(remaining);
+        document.getElementById('payment-amount').value = '';
+        document.getElementById('payment-modal').classList.remove('hidden');
+      }
+    }
+
+    function hidePaymentModal() {
+      document.getElementById('payment-modal').classList.add('hidden');
+      pendingPaymentRecord = null;
+    }
+
+    async function confirmPayment() {
+      if (!pendingPaymentRecord) return;
+
+      const amount = parseFloat(document.getElementById('payment-amount').value);
+      const remaining = pendingPaymentRecord.value - (pendingPaymentRecord.paid_amount || 0);
+
+      if (!amount || amount <= 0) {
+        alert('Digite um valor válido');
+        return;
+      }
+      if (amount > remaining) {
+        alert(`Valor máximo: ${formatCurrency(remaining)}`);
+        return;
+      }
+
+      const btn = document.getElementById('confirm-payment');
+      btn.textContent = 'Processando...';
+      btn.disabled = true;
+
+      const newPaidAmount = (pendingPaymentRecord.paid_amount || 0) + amount;
+      pendingPaymentRecord.paid_amount = newPaidAmount;
+      if (newPaidAmount >= pendingPaymentRecord.value) {
+        pendingPaymentRecord.paid = true;
+      }
+
+      const result = await window.dataSdk.update(pendingPaymentRecord);
+
+      btn.textContent = 'Confirmar';
+      btn.disabled = false;
+
+      if (result.isOk) hidePaymentModal();
+      else console.error('Erro ao atualizar pagamento');
+    }
+
     function renderReports() {
       let filtered = allTransactions;
       if (currentFilter) {
@@ -404,7 +425,6 @@
       const expense = filtered.filter(t => t.type === 'expense');
       const bills = filtered.filter(t => t.type === 'bill');
 
-      // Income report
       let incomeHtml = '';
       if (income.length === 0) {
         incomeHtml = '<p class="text-slate-500">Nenhuma entrada registrada</p>';
@@ -415,41 +435,23 @@
           byCategory[t.category] += t.value;
         });
         incomeHtml = Object.entries(byCategory).map(([cat, total]) => 
-          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-            <span class="font-medium text-slate-700">${cat}</span>
-            <span class="font-semibold text-green-600">${formatCurrency(total)}</span>
-          </div>`
+          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span class="font-medium text-slate-700">${cat}</span><span class="font-semibold text-green-600">${formatCurrency(total)}</span></div>`
         ).join('');
-        incomeHtml += `<div class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-slate-700">Total de Entradas:</span>
-            <span class="font-bold text-green-600 text-lg">${formatCurrency(income.reduce((a, b) => a + b.value, 0))}</span>
-          </div>
-        </div>`;
+        incomeHtml += `<div class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200"><div class="flex justify-between items-center"><span class="font-semibold text-slate-700">Total:</span><span class="font-bold text-green-600 text-lg">${formatCurrency(income.reduce((a, b) => a + b.value, 0))}</span></div></div>`;
       }
       document.getElementById('income-report').innerHTML = incomeHtml;
 
-      // Expense report
       let expenseHtml = '';
       if (expense.length === 0) {
         expenseHtml = '<p class="text-slate-500">Nenhuma saída registrada</p>';
       } else {
         expenseHtml = expense.map(t => 
-          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-            <span class="font-medium text-slate-700">${t.description}</span>
-            <span class="font-semibold text-red-600">${formatCurrency(t.value)}</span>
-          </div>`
+          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span class="font-medium text-slate-700">${t.description}</span><span class="font-semibold text-red-600">${formatCurrency(t.value)}</span></div>`
         ).join('');
-        expenseHtml += `<div class="mt-3 p-3 bg-red-50 rounded-lg border border-red-200">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-slate-700">Total de Saídas:</span>
-            <span class="font-bold text-red-600 text-lg">${formatCurrency(expense.reduce((a, b) => a + b.value, 0))}</span>
-          </div>
-        </div>`;
+        expenseHtml += `<div class="mt-3 p-3 bg-red-50 rounded-lg border border-red-200"><div class="flex justify-between items-center"><span class="font-semibold text-slate-700">Total:</span><span class="font-bold text-red-600 text-lg">${formatCurrency(expense.reduce((a, b) => a + b.value, 0))}</span></div></div>`;
       }
       document.getElementById('expense-report').innerHTML = expenseHtml;
 
-      // Bills report
       let billsHtml = '';
       if (bills.length === 0) {
         billsHtml = '<p class="text-slate-500">Nenhuma conta registrada</p>';
@@ -457,43 +459,60 @@
         const paid = bills.filter(b => b.paid);
         const pending = bills.filter(b => !b.paid);
         
-        billsHtml += `<div class="space-y-2">`;
+        billsHtml = '<div class="space-y-3">';
         
         if (pending.length > 0) {
-          billsHtml += `<div><h3 class="font-semibold text-slate-700 mb-2">⏳ Pendentes:</h3>`;
-          billsHtml += pending.map(t => 
-            `<div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <span class="font-medium text-slate-700">${t.description} (${formatDate(t.date)})</span>
-              <span class="font-semibold text-orange-600">${formatCurrency(t.value)}</span>
-            </div>`
-          ).join('');
-          billsHtml += `</div>`;
+          billsHtml += '<h3 class="font-semibold text-slate-700">⏳ Não Iniciadas:</h3>';
+          const notStarted = pending.filter(b => !b.paid_amount || b.paid_amount === 0);
+          if (notStarted.length > 0) {
+            billsHtml += notStarted.map(t => 
+              `<div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-200"><span class="font-medium text-slate-700">${t.description}</span><span class="font-semibold text-orange-600">${formatCurrency(t.value)}</span></div>`
+            ).join('');
+          }
+
+          billsHtml += '<h3 class="font-semibold text-slate-700 mt-3">⚡ Pagamentos Parciais:</h3>';
+          const partial = pending.filter(b => b.paid_amount && b.paid_amount > 0);
+          if (partial.length > 0) {
+            billsHtml += partial.map(t => {
+              const pct = Math.round((t.paid_amount / t.value) * 100);
+              const remaining = t.value - t.paid_amount;
+              return `
+                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium text-slate-700">${t.description}</span>
+                    <span class="text-xs font-semibold bg-blue-200 text-blue-800 px-2 py-1 rounded">${pct}%</span>
+                  </div>
+                  <div class="w-full bg-gray-300 rounded-full h-2 mb-2">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: ${pct}%"></div>
+                  </div>
+                  <div class="flex justify-between text-xs text-slate-600">
+                    <span>Pago: ${formatCurrency(t.paid_amount)}</span>
+                    <span>Falta: ${formatCurrency(remaining)}</span>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          } else {
+            billsHtml += '<p class="text-slate-500 text-sm">Nenhum pagamento parcial</p>';
+          }
         }
         
         if (paid.length > 0) {
-          billsHtml += `<div><h3 class="font-semibold text-slate-700 mb-2">✅ Pagas:</h3>`;
+          billsHtml += '<h3 class="font-semibold text-slate-700 mt-3">✅ 100% Pagas:</h3>';
           billsHtml += paid.map(t => 
-            `<div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200">
-              <span class="font-medium text-slate-700 line-through">${t.description} (${formatDate(t.date)})</span>
-              <span class="font-semibold text-green-600">${formatCurrency(t.value)}</span>
-            </div>`
+            `<div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200"><span class="font-medium text-slate-700 line-through">${t.description}</span><span class="font-semibold text-green-600">${formatCurrency(t.value)}</span></div>`
           ).join('');
-          billsHtml += `</div>`;
         }
         
-        billsHtml += `<div class="mt-3 p-3 bg-slate-100 rounded-lg">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-slate-700">Total de Contas:</span>
-            <span class="font-bold text-slate-800 text-lg">${formatCurrency(bills.reduce((a, b) => a + b.value, 0))}</span>
-          </div>
-        </div>`;
-        
-        billsHtml += `</div>`;
+        billsHtml += `<div class="mt-4 p-4 bg-slate-100 rounded-lg"><div class="grid grid-cols-3 gap-2">
+          <div><p class="text-xs text-slate-600">Total Contas</p><p class="font-bold text-slate-800">${formatCurrency(bills.reduce((a, b) => a + b.value, 0))}</p></div>
+          <div><p class="text-xs text-slate-600">Já Pago</p><p class="font-bold text-green-600">${formatCurrency(bills.reduce((a, b) => a + (b.paid_amount || 0), 0))}</p></div>
+          <div><p class="text-xs text-slate-600">Ainda Deve</p><p class="font-bold text-red-600">${formatCurrency(bills.reduce((a, b) => a + Math.max(0, b.value - (b.paid_amount || 0)), 0))}</p></div>
+        </div></div></div>`;
       }
       document.getElementById('bills-report').innerHTML = billsHtml;
     }
 
-    // Data handler
     const dataHandler = {
       onDataChanged(data) {
         allTransactions = data;
@@ -501,13 +520,11 @@
       }
     };
 
-    // Element SDK config change
     async function onConfigChange(config) {
       const title = config.app_title || defaultConfig.app_title;
       document.getElementById('main-title').textContent = '💰 ' + title;
     }
 
-    // Initialize
     async function init() {
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('date-input').value = today;
@@ -516,95 +533,77 @@
       document.getElementById('month-filter').value = currentMonth;
       currentFilter = currentMonth;
 
-      // Month filter
       document.getElementById('month-filter').addEventListener('change', (e) => {
         currentFilter = e.target.value || null;
         renderTransactions();
       });
 
-      // Show all button
       document.getElementById('show-all-btn').addEventListener('click', () => {
         currentFilter = null;
         document.getElementById('month-filter').value = '';
         renderTransactions();
       });
 
-      // Set balance button
       document.getElementById('set-balance-btn').addEventListener('click', () => {
         const value = parseFloat(document.getElementById('initial-balance-input').value) || 0;
         initialBalance = value;
         renderTransactions();
       });
 
-      // Update category field
       updateCategoryField();
 
-      // Form submission
       document.getElementById('transaction-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        if (isSubmitting) return;
-
         if (allTransactions.length >= 999) {
-          showNotification('⚠️', 'Limite Atingido', 'Máximo de 999 transações. Exclua algumas antigas.');
+          alert('Limite de 999 transações atingido');
           return;
         }
 
-        isSubmitting = true;
         const btn = document.getElementById('submit-btn');
         btn.textContent = 'Adicionando...';
         btn.disabled = true;
 
-        try {
-          const newTransaction = {
-            id: Date.now().toString(),
-            type: document.getElementById('type-input').value,
-            description: document.getElementById('description-input').value.trim(),
-            value: parseFloat(document.getElementById('value-input').value),
-            date: document.getElementById('date-input').value,
-            category: document.getElementById('category-input').value,
-            paid: false,
-            createdAt: new Date().toISOString()
-          };
+        const newTransaction = {
+          id: Date.now().toString(),
+          type: document.getElementById('type-input').value,
+          description: document.getElementById('description-input').value.trim(),
+          value: parseFloat(document.getElementById('value-input').value),
+          date: document.getElementById('date-input').value,
+          category: document.getElementById('category-input').value || '',
+          paid: false,
+          paid_amount: 0,
+          createdAt: new Date().toISOString()
+        };
 
-          const result = await window.dataSdk.create(newTransaction);
-          
-          if (result.isOk) {
-            showNotification('✅', 'Transação Adicionada!', `${newTransaction.description} foi adicionada com sucesso`);
-            document.getElementById('transaction-form').reset();
-            document.getElementById('date-input').value = today;
-            document.getElementById('type-input').value = 'income';
-            updateCategoryField();
-          } else {
-            showNotification('❌', 'Erro ao Adicionar', `${result.error.message}`);
-          }
-        } catch (error) {
-          showNotification('❌', 'Erro', error.message);
-        } finally {
-          btn.textContent = 'Adicionar';
-          btn.disabled = false;
-          isSubmitting = false;
+        const result = await window.dataSdk.create(newTransaction);
+        
+        btn.textContent = 'Adicionar';
+        btn.disabled = false;
+
+        if (result.isOk) {
+          document.getElementById('description-input').value = '';
+          document.getElementById('value-input').value = '';
         }
       });
 
-      // Delete modal
       document.getElementById('cancel-delete').addEventListener('click', hideDeleteModal);
       document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
       document.getElementById('delete-modal').addEventListener('click', (e) => {
         if (e.target.id === 'delete-modal') hideDeleteModal();
       });
 
-      // Element SDK
+      document.getElementById('cancel-payment').addEventListener('click', hidePaymentModal);
+      document.getElementById('confirm-payment').addEventListener('click', confirmPayment);
+      document.getElementById('payment-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'payment-modal') hidePaymentModal();
+      });
+
       if (window.elementSdk) {
         window.elementSdk.init({
           defaultConfig,
           onConfigChange,
-          mapToCapabilities: (config) => ({
-            recolorables: [],
-            borderables: [],
-            fontEditable: undefined,
-            fontSizeable: undefined
-          }),
+          mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
           mapToEditPanelValues: (config) => new Map([
             ['app_title', config.app_title || defaultConfig.app_title],
             ['initial_balance', config.initial_balance || defaultConfig.initial_balance]
@@ -612,22 +611,11 @@
         });
       }
 
-      // Data SDK
       const initResult = await window.dataSdk.init(dataHandler);
-      if (!initResult.isOk) {
-        console.error('Failed to initialize Data SDK');
-        showNotification('❌', 'Erro', 'Falha ao inicializar o sistema de dados');
-      }
+      if (!initResult.isOk) console.error('Erro ao inicializar Data SDK');
     }
-
-    // Close notification on backdrop click
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'notification-modal') {
-        closeNotification();
-      }
-    });
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d289c09905962a1',t:'MTc3MTg2OTQ4Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28b66485ca62a1',t:'MTc3MTg3MDU2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
