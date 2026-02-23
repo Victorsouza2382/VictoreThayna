@@ -30,7 +30,7 @@
    <div class="min-h-full p-4 md:p-6 lg:p-8">
     <!-- Header -->
     <header class="text-center mb-6">
-     <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Familiar</h1>
+     <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Victor e Thayna</h1>
      <p class="text-slate-500 mt-1">Gerencie entradas, saídas e contas com facilidade</p>
     </header><!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-6xl mx-auto">
@@ -144,7 +144,7 @@
     let initialBalance = 0;
 
     const defaultConfig = {
-      app_title: 'Controle Financeiro Victor e Thayna',
+      app_title: 'Controle Financeiro Familiar',
       initial_balance: '0'
     };
 
@@ -317,11 +317,21 @@
     async function togglePaid(id, paid) {
       const record = allTransactions.find(t => t.__backendId === id);
       if (record) {
+        const btn = event.target;
+        btn.disabled = true;
+        
         record.paid = paid;
         const result = await window.dataSdk.update(record);
-        if (!result.isOk) {
+        
+        btn.disabled = false;
+        
+        if (result.isOk) {
+          showNotification('paid', 'Conta Marcada', `✨ "${record.description}" foi marcada como ${paid ? 'paga' : 'pendente'}`);
+        } else {
           record.paid = !paid;
           renderTransactions();
+          const errorMsg = result.error?.message || 'Erro desconhecido ao atualizar conta';
+          showNotification('error', 'Erro ao Atualizar', 'Não foi possível atualizar a conta', errorMsg);
         }
       }
     }
@@ -349,16 +359,61 @@
         btn.textContent = 'Excluindo...';
         btn.disabled = true;
         
+        const description = pendingDeleteRecord.description;
         const result = await window.dataSdk.delete(pendingDeleteRecord);
         
         btn.textContent = 'Excluir';
         btn.disabled = false;
         
-        if (!result.isOk) {
-          console.error('Failed to delete transaction');
+        if (result.isOk) {
+          showNotification('deleted', 'Deletado com Sucesso', `🗑️ "${description}" foi removido`);
+        } else {
+          const errorMsg = result.error?.message || 'Erro desconhecido';
+          showNotification('error', 'Erro ao Deletar', 'Não foi possível deletar a transação', errorMsg);
         }
         hideDeleteModal();
       }
+    }
+
+    // Show notification modal
+    function showNotification(type, title, message, errorMessage = null) {
+      const modal = document.getElementById('notification-modal');
+      const icon = document.getElementById('notification-icon');
+      const titleEl = document.getElementById('notification-title');
+      const messageEl = document.getElementById('notification-message');
+      const errorDetails = document.getElementById('error-details');
+      const content = document.getElementById('notification-content');
+
+      // Set type-specific styling
+      const types = {
+        success: { icon: '✅', color: 'bg-green-50', borderColor: 'border-green-200' },
+        error: { icon: '❌', color: 'bg-red-50', borderColor: 'border-red-200' },
+        info: { icon: 'ℹ️', color: 'bg-blue-50', borderColor: 'border-blue-200' },
+        paid: { icon: '💳', color: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+        deleted: { icon: '🗑️', color: 'bg-orange-50', borderColor: 'border-orange-200' }
+      };
+
+      const typeInfo = types[type] || types.info;
+      icon.textContent = typeInfo.icon;
+      content.className = `${typeInfo.color} border ${typeInfo.borderColor} rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center`;
+
+      titleEl.textContent = title;
+      messageEl.textContent = message;
+
+      if (errorMessage) {
+        errorDetails.textContent = errorMessage;
+        errorDetails.classList.remove('hidden');
+      } else {
+        errorDetails.classList.add('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeNotification() {
+      document.getElementById('notification-modal').classList.add('hidden');
+      document.getElementById('notification-modal').classList.remove('flex');
     }
 
     // Render reports
@@ -512,15 +567,12 @@
         e.preventDefault();
         
         if (allTransactions.length >= 999) {
-          const warning = document.createElement('div');
-          warning.className = 'bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded mb-4';
-          warning.innerHTML = '⚠️ Limite de 999 transações atingido. Por favor, exclua algumas transações antigas.';
-          document.getElementById('transactions-container').insertBefore(warning, document.getElementById('transactions-container').firstChild);
-          setTimeout(() => warning.remove(), 5000);
+          showNotification('error', 'Limite Atingido', 'Você chegou ao máximo de 999 transações', 'Por favor, exclua algumas transações antigas');
           return;
         }
 
         const btn = document.getElementById('submit-btn');
+        const originalText = btn.textContent;
         btn.textContent = 'Adicionando...';
         btn.disabled = true;
 
@@ -537,12 +589,17 @@
 
         const result = await window.dataSdk.create(newTransaction);
         
-        btn.textContent = 'Adicionar';
+        btn.textContent = originalText;
         btn.disabled = false;
 
         if (result.isOk) {
+          const typeLabel = newTransaction.type === 'income' ? 'Entrada' : newTransaction.type === 'expense' ? 'Saída' : 'Conta';
+          showNotification('success', 'Adicionado com Sucesso', `✅ ${typeLabel} "${newTransaction.description}" foi registrada`, null);
           document.getElementById('description-input').value = '';
           document.getElementById('value-input').value = '';
+        } else {
+          const errorMsg = result.error?.message || 'Erro desconhecido ao adicionar transação';
+          showNotification('error', 'Erro ao Adicionar', 'Não foi possível adicionar a transação', errorMsg);
         }
       });
 
@@ -551,6 +608,12 @@
       document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
       document.getElementById('delete-modal').addEventListener('click', (e) => {
         if (e.target.id === 'delete-modal') hideDeleteModal();
+      });
+
+      // Notification modal
+      document.getElementById('close-notification').addEventListener('click', closeNotification);
+      document.getElementById('notification-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'notification-modal') closeNotification();
       });
 
       // Element SDK
@@ -580,5 +643,5 @@
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d2876c4e5fa62a1',t:'MTc3MTg2Nzk2MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28942c913b62a1',t:'MTc3MTg2OTE2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
