@@ -34,7 +34,7 @@
     <h1 id="main-title" class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">Victor e Thayna (Contas)</h1>
     <p class="text-gray-400 mt-2 text-sm md:text-base">Sistema de Organização Financeira</p>
    </header><!-- Cards de Resumo -->
-   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+   <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-6">
     <div class="card-glass rounded-xl p-4">
      <div class="flex items-center gap-2 mb-2"><span class="text-2xl">💰</span> <span id="wallet-title" class="text-xs md:text-sm text-gray-400">Carteira</span>
      </div>
@@ -49,6 +49,11 @@
      <div class="flex items-center gap-2 mb-2"><span class="text-2xl">📋</span> <span class="text-xs md:text-sm text-gray-400">Contas a Pagar</span>
      </div>
      <p id="total-pending" class="text-lg md:text-2xl font-bold text-yellow-400">R$ 0,00</p>
+    </div>
+    <div class="card-glass rounded-xl p-4">
+     <div class="flex items-center gap-2 mb-2"><span class="text-2xl">💳</span> <span class="text-xs md:text-sm text-gray-400">Parcialmente Pago</span>
+     </div>
+     <p id="total-partial" class="text-lg md:text-2xl font-bold text-blue-400">R$ 0,00</p>
     </div>
     <div class="card-glass rounded-xl p-4">
      <div class="flex items-center gap-2 mb-2"><span class="text-2xl">⏭️</span> <span class="text-xs md:text-sm text-gray-400">Próxima Conta</span>
@@ -110,6 +115,10 @@
      <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">⏳ Contas Pendentes</h3>
       <div id="pending-bills-list" class="space-y-3 max-h-96 overflow-y-auto scrollbar"></div>
+     </div><!-- Lista de Contas Pagas Parcialmente -->
+     <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
+      <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">💳 Contas Pagas Parcialmente</h3>
+      <div id="partial-bills-list" class="space-y-3 max-h-96 overflow-y-auto scrollbar"></div>
      </div><!-- Lista de Contas Pagas -->
      <div class="card-glass rounded-xl p-4 md:p-6">
       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">✅ Contas Pagas</h3>
@@ -148,9 +157,11 @@
    </div><!-- Modal de Pagamento Parcial -->
    <div id="partial-payment-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
     <div class="card-glass rounded-xl p-6 m-4 max-w-md w-full animate-fade">
-     <h3 class="text-xl font-bold mb-4">💳 Pagar Conta</h3>
+     <h3 class="text-xl font-bold mb-4">💳 Pagar Conta Parcialmente</h3>
      <p id="modal-bill-info" class="text-gray-400 mb-4"></p>
      <div class="mb-4"><label class="block text-xs text-gray-400 mb-1">Valor a Pagar (R$)</label> <input type="text" id="partial-amount" placeholder="0,00" class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500 money-mask">
+     </div>
+     <div class="mb-4"><label class="block text-xs text-gray-400 mb-1">Data do Pagamento</label> <input type="date" id="partial-date" class="w-full px-4 py-3 rounded-lg input-style text-white">
      </div>
      <div class="flex gap-3"><button onclick="confirmPartialPayment()" class="flex-1 btn-success px-4 py-3 rounded-lg font-medium">✅ Confirmar</button> <button onclick="closePaymentModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 px-4 py-3 rounded-lg font-medium">❌ Cancelar</button>
      </div>
@@ -165,23 +176,15 @@
       wallet_label: 'Carteira'
     };
 
-    let currentBillId = null;
-    const STORAGE_KEY = 'victor_thayna_contas_v2';
-
     let allData = [];
+    let currentBillId = null;
 
-    function saveToStorage() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
-    }
-
-    function loadFromStorage() {
-      const data = localStorage.getItem(STORAGE_KEY);
-      allData = data ? JSON.parse(data) : [];
-    }
-
-    function generateId() {
-      return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
+    // Storage Manager
+    const storageManager = {
+      save: (data) => localStorage.setItem('financialData', JSON.stringify(data)),
+      load: () => JSON.parse(localStorage.getItem('financialData') || '[]'),
+      clear: () => localStorage.removeItem('financialData')
+    };
 
     // Formatador de moeda
     function formatCurrency(value) {
@@ -202,7 +205,7 @@
     function applyMoneyMask(input) {
       input.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
-        value = (parseInt(value) / 100).toFixed(2);
+        value = (parseInt(value || 0) / 100).toFixed(2);
         if (isNaN(value) || value === 'NaN') value = '0.00';
         value = value.replace('.', ',');
         value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -210,8 +213,15 @@
       });
     }
 
-    // Aplicar máscaras
-    document.querySelectorAll('.money-mask').forEach(applyMoneyMask);
+    // Aplicar máscaras em todos os campos de moeda
+    function initMoneyMasks() {
+      document.querySelectorAll('.money-mask').forEach(input => {
+        if (!input.hasAttribute('data-mask-applied')) {
+          applyMoneyMask(input);
+          input.setAttribute('data-mask-applied', 'true');
+        }
+      });
+    }
 
     // Toast notification
     function showToast(message, type = 'success') {
@@ -252,19 +262,17 @@
       return icons[category] || '📦';
     }
 
-    // Data Handler
-    const dataHandler = {
-      onDataChanged(data) {
-        allData = data;
-        updateUI();
-      }
-    };
+    // Gerar ID único
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
 
     function updateUI() {
       const entries = allData.filter(d => d.type === 'entry');
       const expenses = allData.filter(d => d.type === 'expense');
       const bills = allData.filter(d => d.type === 'bill');
-      const pendingBills = bills.filter(b => b.status === 'pending');
+      const pendingBills = bills.filter(b => b.status === 'pending' && b.remaining === b.amount);
+      const partialBills = bills.filter(b => b.status === 'pending' && b.remaining < b.amount);
       const paidBills = bills.filter(b => b.status === 'paid');
 
       // Cálculos
@@ -272,6 +280,7 @@
       const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
       const totalPaidBills = bills.reduce((sum, b) => sum + (b.amount - b.remaining), 0);
       const totalPending = pendingBills.reduce((sum, b) => sum + b.remaining, 0);
+      const totalPartial = partialBills.reduce((sum, b) => sum + (b.amount - b.remaining), 0);
       const wallet = totalEntries - totalExpenses - totalPaidBills;
 
       // Atualizar cards
@@ -279,6 +288,7 @@
       document.getElementById('total-wallet').className = `text-lg md:text-2xl font-bold ${wallet >= 0 ? 'text-green-400' : 'text-red-400'}`;
       document.getElementById('total-spent').textContent = formatCurrency(totalExpenses + totalPaidBills);
       document.getElementById('total-pending').textContent = formatCurrency(totalPending);
+      document.getElementById('total-partial').textContent = formatCurrency(totalPartial);
 
       // Próxima conta
       const nextBill = pendingBills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0];
@@ -302,9 +312,12 @@
       renderEntriesList(entries);
       renderExpensesList(expenses);
       renderPendingBills(pendingBills);
-      renderPartialBills(bills);
-      renderPaidBills(bills);
+      renderPartialBills(partialBills);
+      renderPaidBills(paidBills);
       renderReports(entries, expenses, bills, wallet);
+
+      // Inicializar máscaras novamente após renderizar
+      setTimeout(initMoneyMasks, 0);
     }
 
     function renderEntriesList(entries) {
@@ -314,17 +327,17 @@
         return;
       }
       list.innerHTML = entries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
-        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg" data-id="${e.__backendId}">
+        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
           <div class="flex items-center gap-3">
             <span class="text-xl">${getCategoryIcon(e.category)}</span>
             <div>
               <p class="font-medium">${e.description}</p>
-              <p class="text-xs text-gray-400">${formatDate(e.created_at.split('T')[0])}</p>
+              <p class="text-xs text-gray-400">${formatDate(e.created_at)}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="font-bold text-green-400">${formatCurrency(e.amount)}</span>
-            <button onclick="deleteRecord('${e.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+            <button onclick="deleteRecord('${e.id}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -337,17 +350,17 @@
         return;
       }
       list.innerHTML = expenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
-        <div class="flex justify-between items-center p-3 bg-red-500/10 rounded-lg" data-id="${e.__backendId}">
+        <div class="flex justify-between items-center p-3 bg-red-500/10 rounded-lg">
           <div class="flex items-center gap-3">
             <span class="text-xl">${getCategoryIcon(e.category)}</span>
             <div>
               <p class="font-medium">${e.description}</p>
-              <p class="text-xs text-gray-400">${formatDate(e.created_at.split('T')[0])}</p>
+              <p class="text-xs text-gray-400">${formatDate(e.created_at)}</p>
             </div>
           </div>
           <div class="flex items-center gap-2">
             <span class="font-bold text-red-400">-${formatCurrency(e.amount)}</span>
-            <button onclick="deleteRecord('${e.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+            <button onclick="deleteRecord('${e.id}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -356,7 +369,7 @@
     function renderPendingBills(bills) {
       const list = document.getElementById('pending-bills-list');
       if (bills.length === 0) {
-        list.innerHTML = '<p class="text-gray-500 text-center py-4">🎉 Todas as contas estão pagas!</p>';
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma conta pendente</p>';
         return;
       }
       const sortedBills = bills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
@@ -379,7 +392,7 @@
         }
 
         return `
-          <div class="p-4 rounded-xl border ${statusClass} bg-white/5" data-id="${b.__backendId}">
+          <div class="p-4 rounded-xl border ${statusClass} bg-white/5">
             <div class="flex justify-between items-start mb-3">
               <div>
                 <h4 class="font-semibold text-lg">${b.description}</h4>
@@ -392,9 +405,9 @@
               </div>
             </div>
             <div class="flex gap-2 flex-wrap">
-              <button onclick="payFullBill('${b.__backendId}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Pagar Total</button>
-              <button onclick="openPaymentModal('${b.__backendId}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Parcial</button>
-              <button onclick="deleteRecord('${b.__backendId}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
+              <button onclick="payFullBill('${b.id}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Pagar Total</button>
+              <button onclick="openPaymentModal('${b.id}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Parcial</button>
+              <button onclick="deleteRecord('${b.id}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
             </div>
           </div>
         `;
@@ -402,13 +415,12 @@
     }
 
     function renderPartialBills(bills) {
-      const partialBills = bills.filter(b => b.status === 'pending' && b.remaining < b.amount);
       const list = document.getElementById('partial-bills-list');
-      if (partialBills.length === 0) {
+      if (bills.length === 0) {
         list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma conta parcialmente paga</p>';
         return;
       }
-      const sortedBills = partialBills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+      const sortedBills = bills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
       list.innerHTML = sortedBills.map(b => {
         const paidAmount = b.amount - b.remaining;
         const percentagePaid = Math.round((paidAmount / b.amount) * 100);
@@ -429,8 +441,10 @@
           statusText = `🟠 Vence em ${diffDays} dias`;
         }
 
+        const paymentHistory = b.payment_history || [];
+
         return `
-          <div class="p-4 rounded-xl border ${statusClass} bg-white/5" data-id="${b.__backendId}">
+          <div class="p-4 rounded-xl border ${statusClass} bg-white/5">
             <div class="flex justify-between items-start mb-3">
               <div class="flex-1">
                 <h4 class="font-semibold text-lg">${b.description}</h4>
@@ -451,11 +465,22 @@
                 <div class="bg-blue-500 h-2.5 rounded-full transition-all" style="width: ${percentagePaid}%"></div>
               </div>
             </div>
+            ${paymentHistory.length > 0 ? `
+              <div class="mb-3 p-2 bg-white/5 rounded text-xs">
+                <p class="text-gray-400 font-semibold mb-2">📋 Histórico de Pagamentos:</p>
+                ${paymentHistory.map(p => `
+                  <div class="flex justify-between text-gray-300 mb-1">
+                    <span>${formatDate(p.date)}</span>
+                    <span class="text-blue-400 font-medium">${formatCurrency(p.amount)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
             <p class="text-sm text-orange-400 mb-3">💛 Faltam ${formatCurrency(b.remaining)} para completar</p>
             <div class="flex gap-2 flex-wrap">
-              <button onclick="payFullBill('${b.__backendId}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Completar</button>
-              <button onclick="openPaymentModal('${b.__backendId}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Mais</button>
-              <button onclick="deleteRecord('${b.__backendId}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
+              <button onclick="payFullBill('${b.id}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Completar</button>
+              <button onclick="openPaymentModal('${b.id}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Mais</button>
+              <button onclick="deleteRecord('${b.id}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
             </div>
           </div>
         `;
@@ -463,21 +488,20 @@
     }
 
     function renderPaidBills(bills) {
-      const fullyPaidBills = bills.filter(b => b.status === 'paid' && b.remaining === 0);
       const list = document.getElementById('paid-bills-list');
-      if (fullyPaidBills.length === 0) {
+      if (bills.length === 0) {
         list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma conta totalmente paga</p>';
         return;
       }
-      list.innerHTML = fullyPaidBills.sort((a, b) => new Date(b.paid_at) - new Date(a.paid_at)).map(b => `
-        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg" data-id="${b.__backendId}">
+      list.innerHTML = bills.sort((a, b) => new Date(b.paid_at) - new Date(a.paid_at)).map(b => `
+        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg">
           <div>
             <p class="font-medium">${b.description}</p>
-            <p class="text-xs text-gray-400">Pago em: ${formatDate(b.paid_at?.split('T')[0])}</p>
+            <p class="text-xs text-gray-400">Pago em: ${formatDate(b.paid_at)}</p>
           </div>
           <div class="flex items-center gap-2">
             <span class="font-bold text-green-400">${formatCurrency(b.amount)}</span>
-            <button onclick="deleteRecord('${b.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+            <button onclick="deleteRecord('${b.id}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
           </div>
         </div>
       `).join('');
@@ -551,7 +575,7 @@
     }
 
     // Adicionar entrada
-    async function addEntry() {
+    function addEntry() {
       const desc = document.getElementById('entry-desc').value.trim();
       const category = document.getElementById('entry-category').value;
       const amount = parseCurrency(document.getElementById('entry-amount').value);
@@ -561,36 +585,23 @@
         return;
       }
 
-      if (allData.length >= 999) {
-        showToast('Limite de 999 registros atingido!', 'error');
-        return;
-      }
-
-      const btn = document.getElementById('btn-add-entry');
-      btn.disabled = true;
-      btn.textContent = '⏳ Salvando...';
-
-      // Capitalizar primeira letra
-      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
-
-      allData.push({
-        __backendId: generateId(),
+      const newEntry = {
+        id: generateId(),
         type: 'entry',
-        description: capitalizedDesc,
+        description: desc,
         amount: amount,
         remaining: 0,
         category: category,
         due_date: '',
         reference_date: '',
         status: 'completed',
-        created_at: new Date().toISOString(),
-        paid_at: ''
-      });
-      saveToStorage();
+        created_at: new Date().toISOString().split('T')[0],
+        paid_at: '',
+        payment_history: []
+      };
 
-      btn.disabled = false;
-      btn.textContent = '➕ Adicionar Entrada';
-
+      allData.push(newEntry);
+      storageManager.save(allData);
       showToast('Entrada adicionada com sucesso!');
       document.getElementById('entry-desc').value = '';
       document.getElementById('entry-amount').value = '';
@@ -598,7 +609,7 @@
     }
 
     // Adicionar saída
-    async function addExpense() {
+    function addExpense() {
       const desc = document.getElementById('expense-desc').value.trim();
       const category = document.getElementById('expense-category').value;
       const amount = parseCurrency(document.getElementById('expense-amount').value);
@@ -608,36 +619,23 @@
         return;
       }
 
-      if (allData.length >= 999) {
-        showToast('Limite de 999 registros atingido!', 'error');
-        return;
-      }
-
-      const btn = document.getElementById('btn-add-expense');
-      btn.disabled = true;
-      btn.textContent = '⏳ Salvando...';
-
-      // Capitalizar primeira letra
-      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
-
-      allData.push({
-        __backendId: generateId(),
+      const newExpense = {
+        id: generateId(),
         type: 'expense',
-        description: capitalizedDesc,
+        description: desc,
         amount: amount,
         remaining: 0,
         category: category,
         due_date: '',
         reference_date: '',
         status: 'completed',
-        created_at: new Date().toISOString(),
-        paid_at: ''
-      });
-      saveToStorage();
+        created_at: new Date().toISOString().split('T')[0],
+        paid_at: '',
+        payment_history: []
+      };
 
-      btn.disabled = false;
-      btn.textContent = '➕ Adicionar Saída';
-
+      allData.push(newExpense);
+      storageManager.save(allData);
       showToast('Saída registrada com sucesso!');
       document.getElementById('expense-desc').value = '';
       document.getElementById('expense-amount').value = '';
@@ -645,7 +643,7 @@
     }
 
     // Adicionar conta
-    async function addBill() {
+    function addBill() {
       const desc = document.getElementById('bill-desc').value.trim();
       const amount = parseCurrency(document.getElementById('bill-amount').value);
       const dueDate = document.getElementById('bill-due').value;
@@ -656,36 +654,23 @@
         return;
       }
 
-      if (allData.length >= 999) {
-        showToast('Limite de 999 registros atingido!', 'error');
-        return;
-      }
-
-      const btn = document.getElementById('btn-add-bill');
-      btn.disabled = true;
-      btn.textContent = '⏳ Salvando...';
-
-      // Capitalizar primeira letra
-      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
-
-      allData.push({
-        __backendId: generateId(),
+      const newBill = {
+        id: generateId(),
         type: 'bill',
-        description: capitalizedDesc,
+        description: desc,
         amount: amount,
         remaining: amount,
         category: 'conta',
         due_date: dueDate,
         reference_date: refDate,
         status: 'pending',
-        created_at: new Date().toISOString(),
-        paid_at: ''
-      });
-      saveToStorage();
+        created_at: new Date().toISOString().split('T')[0],
+        paid_at: '',
+        payment_history: []
+      };
 
-      btn.disabled = false;
-      btn.textContent = '➕ Adicionar Conta';
-
+      allData.push(newBill);
+      storageManager.save(allData);
       showToast('Conta adicionada com sucesso!');
       document.getElementById('bill-desc').value = '';
       document.getElementById('bill-amount').value = '';
@@ -695,14 +680,14 @@
     }
 
     // Pagar conta total
-    async function payFullBill(id) {
-      const billIndex = allData.findIndex(d => d.__backendId === id);
-      if (billIndex === -1) return;
+    function payFullBill(id) {
+      const bill = allData.find(d => d.id === id);
+      if (!bill) return;
 
-      const bill = allData[billIndex];
-      allData[billIndex] = { ...bill, remaining: 0, status: 'paid', paid_at: new Date().toISOString() };
-      saveToStorage();
-
+      bill.remaining = 0;
+      bill.status = 'paid';
+      bill.paid_at = new Date().toISOString().split('T')[0];
+      storageManager.save(allData);
       showToast(`Conta "${bill.description}" paga com sucesso!`);
       updateUI();
     }
@@ -710,7 +695,7 @@
     // Abrir modal de pagamento parcial
     function openPaymentModal(id) {
       currentBillId = id;
-      const bill = allData.find(d => d.__backendId === id);
+      const bill = allData.find(d => d.id === id);
       if (!bill) return;
 
       document.getElementById('modal-bill-info').innerHTML = `
@@ -718,11 +703,10 @@
         Valor restante: <span class="text-yellow-400">${formatCurrency(bill.remaining)}</span>
       `;
       document.getElementById('partial-amount').value = '';
+      document.getElementById('partial-date').valueAsDate = new Date();
       document.getElementById('partial-payment-modal').classList.remove('hidden');
       
-      // Reaplicar máscara
-      const input = document.getElementById('partial-amount');
-      applyMoneyMask(input);
+      setTimeout(initMoneyMasks, 0);
     }
 
     function closePaymentModal() {
@@ -731,14 +715,14 @@
     }
 
     // Confirmar pagamento parcial
-    async function confirmPartialPayment() {
+    function confirmPartialPayment() {
       if (!currentBillId) return;
 
-      const billIndex = allData.findIndex(d => d.__backendId === currentBillId);
-      if (billIndex === -1) return;
+      const bill = allData.find(d => d.id === currentBillId);
+      if (!bill) return;
 
-      const bill = allData[billIndex];
       const paymentAmount = parseCurrency(document.getElementById('partial-amount').value);
+      const paymentDate = document.getElementById('partial-date').value;
 
       if (paymentAmount <= 0) {
         showToast('Digite um valor válido!', 'error');
@@ -750,16 +734,22 @@
         return;
       }
 
+      if (!paymentDate) {
+        showToast('Selecione a data do pagamento!', 'error');
+        return;
+      }
+
       const newRemaining = bill.remaining - paymentAmount;
       const isPaid = newRemaining <= 0;
 
-      allData[billIndex] = {
-        ...bill,
-        remaining: Math.max(0, newRemaining),
-        status: isPaid ? 'paid' : 'pending',
-        paid_at: isPaid ? new Date().toISOString() : bill.paid_at
-      };
-      saveToStorage();
+      bill.remaining = Math.max(0, newRemaining);
+      bill.status = isPaid ? 'paid' : 'pending';
+      bill.paid_at = isPaid ? paymentDate : bill.paid_at;
+
+      if (!bill.payment_history) bill.payment_history = [];
+      bill.payment_history.push({ amount: paymentAmount, date: paymentDate });
+
+      storageManager.save(allData);
 
       if (isPaid) {
         showToast(`Conta "${bill.description}" quitada!`);
@@ -771,11 +761,10 @@
     }
 
     // Deletar registro
-    async function deleteRecord(id) {
-      const record = allData.find(d => d.__backendId === id);
+    function deleteRecord(id) {
+      const record = allData.find(d => d.id === id);
       if (!record) return;
 
-      // Confirmação inline via toast especial
       const container = document.getElementById('toast-container');
       const confirmToast = document.createElement('div');
       confirmToast.className = 'toast bg-gray-800 text-white flex flex-col gap-2';
@@ -788,10 +777,10 @@
       `;
       container.appendChild(confirmToast);
 
-      document.getElementById(`confirm-delete-${id}`).onclick = async () => {
+      document.getElementById(`confirm-delete-${id}`).onclick = () => {
+        allData = allData.filter(d => d.id !== id);
+        storageManager.save(allData);
         confirmToast.remove();
-        allData = allData.filter(d => d.__backendId !== id);
-        saveToStorage();
         showToast('Registro excluído!');
         updateUI();
       };
@@ -826,9 +815,7 @@
     }
 
     // Inicialização
-    async function init() {
-      loadFromStorage();
-      
+    function init() {
       if (window.elementSdk) {
         window.elementSdk.init({
           defaultConfig,
@@ -838,10 +825,13 @@
         });
       }
 
+      // Carregar dados do localStorage
+      allData = storageManager.load();
       updateUI();
+      initMoneyMasks();
     }
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28f1c6e3a962a1',t:'MTc3MTg3Mjk5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d291423650362a1',t:'MTc3MTg3NDQwNy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
