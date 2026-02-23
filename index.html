@@ -6,7 +6,6 @@
   <title>Victor e Thayna (Contas)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
     * { font-family: 'Poppins', sans-serif; }
@@ -27,6 +26,7 @@
     @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   </style>
   <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full gradient-bg text-white overflow-auto">
   <div id="app" class="w-full min-h-full p-4 md:p-6"><!-- Header -->
@@ -165,8 +165,23 @@
       wallet_label: 'Carteira'
     };
 
-    let allData = [];
     let currentBillId = null;
+    const STORAGE_KEY = 'victor_thayna_contas_v2';
+
+    let allData = [];
+
+    function saveToStorage() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allData));
+    }
+
+    function loadFromStorage() {
+      const data = localStorage.getItem(STORAGE_KEY);
+      allData = data ? JSON.parse(data) : [];
+    }
+
+    function generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
 
     // Formatador de moeda
     function formatCurrency(value) {
@@ -535,14 +550,9 @@
       }
     }
 
-    // Capitalizar primeira letra
-    function capitalizeFirst(str) {
-      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    }
-
     // Adicionar entrada
     async function addEntry() {
-      const desc = capitalizeFirst(document.getElementById('entry-desc').value.trim());
+      const desc = document.getElementById('entry-desc').value.trim();
       const category = document.getElementById('entry-category').value;
       const amount = parseCurrency(document.getElementById('entry-amount').value);
 
@@ -560,9 +570,13 @@
       btn.disabled = true;
       btn.textContent = '⏳ Salvando...';
 
-      const result = await window.dataSdk.create({
+      // Capitalizar primeira letra
+      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+      allData.push({
+        __backendId: generateId(),
         type: 'entry',
-        description: desc,
+        description: capitalizedDesc,
         amount: amount,
         remaining: 0,
         category: category,
@@ -572,22 +586,20 @@
         created_at: new Date().toISOString(),
         paid_at: ''
       });
+      saveToStorage();
 
       btn.disabled = false;
       btn.textContent = '➕ Adicionar Entrada';
 
-      if (result.isOk) {
-        showToast('Entrada adicionada com sucesso!');
-        document.getElementById('entry-desc').value = '';
-        document.getElementById('entry-amount').value = '';
-      } else {
-        showToast('Erro ao salvar entrada!', 'error');
-      }
+      showToast('Entrada adicionada com sucesso!');
+      document.getElementById('entry-desc').value = '';
+      document.getElementById('entry-amount').value = '';
+      updateUI();
     }
 
     // Adicionar saída
     async function addExpense() {
-      const desc = capitalizeFirst(document.getElementById('expense-desc').value.trim());
+      const desc = document.getElementById('expense-desc').value.trim();
       const category = document.getElementById('expense-category').value;
       const amount = parseCurrency(document.getElementById('expense-amount').value);
 
@@ -605,9 +617,13 @@
       btn.disabled = true;
       btn.textContent = '⏳ Salvando...';
 
-      const result = await window.dataSdk.create({
+      // Capitalizar primeira letra
+      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+      allData.push({
+        __backendId: generateId(),
         type: 'expense',
-        description: desc,
+        description: capitalizedDesc,
         amount: amount,
         remaining: 0,
         category: category,
@@ -617,22 +633,20 @@
         created_at: new Date().toISOString(),
         paid_at: ''
       });
+      saveToStorage();
 
       btn.disabled = false;
       btn.textContent = '➕ Adicionar Saída';
 
-      if (result.isOk) {
-        showToast('Saída registrada com sucesso!');
-        document.getElementById('expense-desc').value = '';
-        document.getElementById('expense-amount').value = '';
-      } else {
-        showToast('Erro ao salvar saída!', 'error');
-      }
+      showToast('Saída registrada com sucesso!');
+      document.getElementById('expense-desc').value = '';
+      document.getElementById('expense-amount').value = '';
+      updateUI();
     }
 
     // Adicionar conta
     async function addBill() {
-      const desc = capitalizeFirst(document.getElementById('bill-desc').value.trim());
+      const desc = document.getElementById('bill-desc').value.trim();
       const amount = parseCurrency(document.getElementById('bill-amount').value);
       const dueDate = document.getElementById('bill-due').value;
       const refDate = document.getElementById('bill-ref').value;
@@ -651,9 +665,13 @@
       btn.disabled = true;
       btn.textContent = '⏳ Salvando...';
 
-      const result = await window.dataSdk.create({
+      // Capitalizar primeira letra
+      const capitalizedDesc = desc.charAt(0).toUpperCase() + desc.slice(1);
+
+      allData.push({
+        __backendId: generateId(),
         type: 'bill',
-        description: desc,
+        description: capitalizedDesc,
         amount: amount,
         remaining: amount,
         category: 'conta',
@@ -663,34 +681,30 @@
         created_at: new Date().toISOString(),
         paid_at: ''
       });
+      saveToStorage();
 
       btn.disabled = false;
       btn.textContent = '➕ Adicionar Conta';
 
-      if (result.isOk) {
-        showToast('Conta adicionada com sucesso!');
-        document.getElementById('bill-desc').value = '';
-        document.getElementById('bill-amount').value = '';
-        document.getElementById('bill-due').value = '';
-        document.getElementById('bill-ref').value = '';
-      } else {
-        showToast('Erro ao salvar conta!', 'error');
-      }
+      showToast('Conta adicionada com sucesso!');
+      document.getElementById('bill-desc').value = '';
+      document.getElementById('bill-amount').value = '';
+      document.getElementById('bill-due').value = '';
+      document.getElementById('bill-ref').value = '';
+      updateUI();
     }
 
     // Pagar conta total
     async function payFullBill(id) {
-      const bill = allData.find(d => d.__backendId === id);
-      if (!bill) return;
+      const billIndex = allData.findIndex(d => d.__backendId === id);
+      if (billIndex === -1) return;
 
-      const updatedBill = { ...bill, remaining: 0, status: 'paid', paid_at: new Date().toISOString() };
-      const result = await window.dataSdk.update(updatedBill);
+      const bill = allData[billIndex];
+      allData[billIndex] = { ...bill, remaining: 0, status: 'paid', paid_at: new Date().toISOString() };
+      saveToStorage();
 
-      if (result.isOk) {
-        showToast(`Conta "${bill.description}" paga com sucesso!`);
-      } else {
-        showToast('Erro ao pagar conta!', 'error');
-      }
+      showToast(`Conta "${bill.description}" paga com sucesso!`);
+      updateUI();
     }
 
     // Abrir modal de pagamento parcial
@@ -720,9 +734,10 @@
     async function confirmPartialPayment() {
       if (!currentBillId) return;
 
-      const bill = allData.find(d => d.__backendId === currentBillId);
-      if (!bill) return;
+      const billIndex = allData.findIndex(d => d.__backendId === currentBillId);
+      if (billIndex === -1) return;
 
+      const bill = allData[billIndex];
       const paymentAmount = parseCurrency(document.getElementById('partial-amount').value);
 
       if (paymentAmount <= 0) {
@@ -738,25 +753,21 @@
       const newRemaining = bill.remaining - paymentAmount;
       const isPaid = newRemaining <= 0;
 
-      const updatedBill = {
+      allData[billIndex] = {
         ...bill,
         remaining: Math.max(0, newRemaining),
         status: isPaid ? 'paid' : 'pending',
         paid_at: isPaid ? new Date().toISOString() : bill.paid_at
       };
+      saveToStorage();
 
-      const result = await window.dataSdk.update(updatedBill);
-
-      if (result.isOk) {
-        if (isPaid) {
-          showToast(`Conta "${bill.description}" quitada!`);
-        } else {
-          showToast(`Pagamento de ${formatCurrency(paymentAmount)} registrado! Resta ${formatCurrency(newRemaining)}`);
-        }
-        closePaymentModal();
+      if (isPaid) {
+        showToast(`Conta "${bill.description}" quitada!`);
       } else {
-        showToast('Erro ao processar pagamento!', 'error');
+        showToast(`Pagamento de ${formatCurrency(paymentAmount)} registrado! Resta ${formatCurrency(newRemaining)}`);
       }
+      closePaymentModal();
+      updateUI();
     }
 
     // Deletar registro
@@ -779,12 +790,10 @@
 
       document.getElementById(`confirm-delete-${id}`).onclick = async () => {
         confirmToast.remove();
-        const result = await window.dataSdk.delete(record);
-        if (result.isOk) {
-          showToast('Registro excluído!');
-        } else {
-          showToast('Erro ao excluir!', 'error');
-        }
+        allData = allData.filter(d => d.__backendId !== id);
+        saveToStorage();
+        showToast('Registro excluído!');
+        updateUI();
       };
 
       document.getElementById(`cancel-delete-${id}`).onclick = () => {
@@ -818,6 +827,8 @@
 
     // Inicialização
     async function init() {
+      loadFromStorage();
+      
       if (window.elementSdk) {
         window.elementSdk.init({
           defaultConfig,
@@ -827,15 +838,10 @@
         });
       }
 
-      if (window.dataSdk) {
-        const result = await window.dataSdk.init(dataHandler);
-        if (!result.isOk) {
-          console.error('Erro ao inicializar Data SDK');
-        }
-      }
+      updateUI();
     }
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28d7fd338262a1',t:'MTc3MTg3MTk0My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28f1c6e3a962a1',t:'MTc3MTg3Mjk5OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
