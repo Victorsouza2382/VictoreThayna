@@ -3,619 +3,858 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle Financeiro Familiar</title>
+  <title>Victor e Thayna (Contas)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
   <style>
-    * { font-family: 'DM Sans', sans-serif; }
-    .glass { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); }
-    .income-gradient { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .expense-gradient { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-    .account-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
-    .pending-gradient { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
-    .checkbox-custom { appearance: none; width: 20px; height: 20px; border: 2px solid #d1d5db; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
-    .checkbox-custom:checked { background: #10b981; border-color: #10b981; background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e"); }
-    .fade-in { animation: fadeIn 0.3s ease-out; }
+    * { font-family: 'Poppins', sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    .card-glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+    .input-style { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); }
+    .input-style:focus { background: rgba(255,255,255,0.12); border-color: #e94560; outline: none; }
+    .btn-primary { background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%); }
+    .btn-primary:hover { background: linear-gradient(135deg, #ff6b6b 0%, #e94560 100%); }
+    .btn-success { background: linear-gradient(135deg, #00b894 0%, #00cec9 100%); }
+    .btn-warning { background: linear-gradient(135deg, #fdcb6e 0%, #f39c12 100%); }
+    .scrollbar::-webkit-scrollbar { width: 6px; }
+    .scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+    .scrollbar::-webkit-scrollbar-thumb { background: #e94560; border-radius: 3px; }
+    .animate-fade { animation: fadeIn 0.3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    .tab-button { padding: 12px 24px; border: none; background: transparent; cursor: pointer; font-weight: 600; color: #64748b; transition: all 0.3s; }
-    .tab-button.active { color: #1e293b; border-bottom: 3px solid #3b82f6; }
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; border-radius: 8px; z-index: 1000; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
   </style>
   <style>body { box-sizing: border-box; }</style>
  </head>
- <body class="h-full bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
-  <div id="app" class="h-full overflow-auto">
-   <div class="min-h-full p-4 md:p-6 lg:p-8">
-    <!-- Header -->
-    <header class="text-center mb-6">
-     <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Familiar</h1>
-     <p class="text-slate-500 mt-1">Gerencie entradas, saídas e contas com facilidade</p>
-    </header><!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6 max-w-6xl mx-auto">
-     <div class="income-gradient rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">💵 Total Entrado</p>
-       <p id="total-income" class="text-2xl font-bold">R$ 0,00</p>
-      </div>
+ <body class="h-full gradient-bg text-white overflow-auto">
+  <div id="app" class="w-full min-h-full p-4 md:p-6">
+   <!-- Header -->
+   <header class="text-center mb-6">
+    <h1 id="main-title" class="text-2xl md:text-4xl font-bold bg-gradient-to-r from-pink-500 to-red-500 bg-clip-text text-transparent">Victor e Thayna (Contas)</h1>
+    <p class="text-gray-400 mt-2 text-sm md:text-base">Sistema de Organização Financeira</p>
+   </header><!-- Cards de Resumo -->
+   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+    <div class="card-glass rounded-xl p-4">
+     <div class="flex items-center gap-2 mb-2">
+      <span class="text-2xl">💰</span> <span id="wallet-title" class="text-xs md:text-sm text-gray-400">Carteira</span>
      </div>
-     <div class="expense-gradient rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">💸 Total Gasto</p>
-       <p id="total-expense" class="text-2xl font-bold">R$ 0,00</p>
-      </div>
+     <p id="total-wallet" class="text-lg md:text-2xl font-bold text-green-400">R$ 0,00</p>
+    </div>
+    <div class="card-glass rounded-xl p-4">
+     <div class="flex items-center gap-2 mb-2">
+      <span class="text-2xl">📤</span> <span class="text-xs md:text-sm text-gray-400">Total Gasto</span>
      </div>
-     <div class="pending-gradient rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">⏳ Pendentes</p>
-       <p id="pending-bills" class="text-2xl font-bold">R$ 0,00</p>
-      </div>
+     <p id="total-spent" class="text-lg md:text-2xl font-bold text-red-400">R$ 0,00</p>
+    </div>
+    <div class="card-glass rounded-xl p-4">
+     <div class="flex items-center gap-2 mb-2">
+      <span class="text-2xl">📋</span> <span class="text-xs md:text-sm text-gray-400">Contas a Pagar</span>
      </div>
-     <div class="account-gradient rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">🏦 Saldo</p>
-       <p id="account-balance" class="text-2xl font-bold">R$ 0,00</p>
-      </div>
+     <p id="total-pending" class="text-lg md:text-2xl font-bold text-yellow-400">R$ 0,00</p>
+    </div>
+    <div class="card-glass rounded-xl p-4">
+     <div class="flex items-center gap-2 mb-2">
+      <span class="text-2xl">⏭️</span> <span class="text-xs md:text-sm text-gray-400">Próxima Conta</span>
      </div>
-     <div class="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">📌 Próxima Conta</p>
-       <p id="next-bill" class="text-lg font-bold truncate">-</p>
-      </div>
-     </div>
-     <div class="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl p-5 text-white shadow-lg">
-      <div>
-       <p class="text-sm opacity-90">💔 Resta Pagar</p>
-       <p id="remaining-balance" class="text-2xl font-bold">R$ 0,00</p>
-      </div>
-     </div>
-    </div><!-- Controls & Filters -->
-    <div class="max-w-6xl mx-auto mb-4">
-     <div class="glass rounded-xl p-4 flex flex-wrap gap-4 items-center">
-      <div class="flex items-center gap-2">
-       <label class="text-slate-600 font-medium">📅 Mês:</label> <input type="month" id="month-filter" class="px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none">
-      </div><button id="show-all-btn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg text-slate-700 font-medium transition-colors">Ver Todos</button>
-      <div class="flex items-center gap-2 ml-auto">
-       <label class="text-slate-600 font-medium">💰 Saldo Inicial:</label> <input type="number" id="initial-balance-input" step="0.01" placeholder="0,00" class="px-3 py-2 w-32 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"> <button id="set-balance-btn" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">OK</button>
-      </div>
-     </div>
-    </div><!-- Tabs -->
-    <div class="max-w-6xl mx-auto mb-4">
-     <div class="glass rounded-xl px-4 border-b border-slate-200">
-      <button class="tab-button active" onclick="switchTab('transactions')">📋 Transações</button> <button class="tab-button" onclick="switchTab('reports')">📊 Relatórios</button>
-     </div>
-    </div><!-- Add Transaction Form -->
-    <div class="max-w-6xl mx-auto mb-6">
-     <div class="glass rounded-2xl p-5 shadow-lg">
-      <h2 class="text-lg font-semibold text-slate-700 mb-4">➕ Nova Transação</h2>
-      <form id="transaction-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+     <p id="next-bill" class="text-xs md:text-sm font-medium text-orange-400">Nenhuma</p>
+    </div>
+   </div><!-- Abas -->
+   <div class="flex flex-wrap gap-2 mb-6">
+    <button onclick="switchTab('entries')" id="tab-entries" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-pink-600">💵 Entradas</button> <button onclick="switchTab('expenses')" id="tab-expenses" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/10">💸 Saídas</button> <button onclick="switchTab('bills')" id="tab-bills" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/10">📅 Contas</button> <button onclick="switchTab('reports')" id="tab-reports" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium bg-white/10">📊 Relatórios</button>
+   </div><!-- Conteúdo das Abas -->
+   <div id="content-area">
+    <!-- Aba Entradas -->
+    <div id="tab-content-entries" class="animate-fade">
+     <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">💵 Registrar Entrada</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
        <div>
-        <label class="block text-sm text-slate-600 mb-1">Tipo</label> <select id="type-input" onchange="updateCategoryField()" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"> <option value="income">💵 Entrada</option> <option value="expense">💸 Saída</option> <option value="bill">📄 Conta</option> </select>
-       </div>
-       <div id="category-field">
-        <label class="block text-sm text-slate-600 mb-1">Fonte</label> <select id="category-input" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none"> <option value="salary">Salário</option> <option value="uber">Uber</option> <option value="freelance">Freelance</option> <option value="sales">Vendas</option> <option value="other">Outro</option> </select>
-       </div>
-       <div class="lg:col-span-2">
-        <label class="block text-sm text-slate-600 mb-1">Descrição</label> <input type="text" id="description-input" placeholder="Ex: Energia, Boleto..." class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" required>
+        <label class="block text-xs text-gray-400 mb-1">Descrição</label> <input type="text" id="entry-desc" placeholder="Ex: Salário, Uber, Vendas..." class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500">
        </div>
        <div>
-        <label class="block text-sm text-slate-600 mb-1">Valor (R$)</label> <input type="number" id="value-input" step="0.01" min="0.01" placeholder="0,00" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" required>
+        <label class="block text-xs text-gray-400 mb-1">Categoria</label> <select id="entry-category" class="w-full px-4 py-3 rounded-lg input-style text-white"> <option value="salario">💼 Salário</option> <option value="uber">🚗 Uber</option> <option value="vendas">🛒 Vendas</option> <option value="apostas">🎰 Apostas</option> <option value="outros">📦 Outros</option> </select>
        </div>
        <div>
-        <label class="block text-sm text-slate-600 mb-1">Data</label> <input type="date" id="date-input" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none" required>
+        <label class="block text-xs text-gray-400 mb-1">Valor (R$)</label> <input type="text" id="entry-amount" placeholder="0,00" class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500 money-mask">
        </div>
-       <div class="lg:col-span-6">
-        <button type="submit" id="submit-btn" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all shadow-md hover:shadow-lg">Adicionar</button>
+      </div><button onclick="addEntry()" id="btn-add-entry" class="mt-4 btn-primary px-6 py-3 rounded-lg font-medium w-full md:w-auto">➕ Adicionar Entrada</button>
+     </div>
+     <div class="card-glass rounded-xl p-4 md:p-6">
+      <h3 class="text-lg font-semibold mb-4">📜 Histórico de Entradas</h3>
+      <div id="entries-list" class="space-y-2 max-h-64 overflow-y-auto scrollbar"></div>
+     </div>
+    </div><!-- Aba Saídas -->
+    <div id="tab-content-expenses" class="animate-fade hidden">
+     <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">💸 Registrar Saída</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Descrição</label> <input type="text" id="expense-desc" placeholder="Ex: Mercado, Gasolina..." class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500">
        </div>
-      </form>
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Categoria</label> <select id="expense-category" class="w-full px-4 py-3 rounded-lg input-style text-white"> <option value="alimentacao">🍔 Alimentação</option> <option value="transporte">🚗 Transporte</option> <option value="lazer">🎮 Lazer</option> <option value="saude">💊 Saúde</option> <option value="outros">📦 Outros</option> </select>
+       </div>
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Valor (R$)</label> <input type="text" id="expense-amount" placeholder="0,00" class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500 money-mask">
+       </div>
+      </div><button onclick="addExpense()" id="btn-add-expense" class="mt-4 btn-primary px-6 py-3 rounded-lg font-medium w-full md:w-auto">➕ Adicionar Saída</button>
      </div>
-    </div><!-- Transactions Tab -->
-    <div id="transactions-tab" class="max-w-6xl mx-auto">
-     <div class="glass rounded-2xl p-5 shadow-lg">
-      <div class="flex items-center justify-between mb-4">
-       <h2 class="text-lg font-semibold text-slate-700">📋 Transações</h2>
-       <div id="paid-summary" class="text-sm text-slate-500"></div>
+     <div class="card-glass rounded-xl p-4 md:p-6">
+      <h3 class="text-lg font-semibold mb-4">📜 Histórico de Saídas</h3>
+      <div id="expenses-list" class="space-y-2 max-h-64 overflow-y-auto scrollbar"></div>
+     </div>
+    </div><!-- Aba Contas -->
+    <div id="tab-content-bills" class="animate-fade hidden">
+     <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
+      <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">📅 Adicionar Conta</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Descrição da Conta</label> <input type="text" id="bill-desc" placeholder="Ex: Luz, Água, Internet..." class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500">
+       </div>
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Valor Total (R$)</label> <input type="text" id="bill-amount" placeholder="0,00" class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500 money-mask">
+       </div>
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Data de Vencimento</label> <input type="date" id="bill-due" class="w-full px-4 py-3 rounded-lg input-style text-white">
+       </div>
+       <div>
+        <label class="block text-xs text-gray-400 mb-1">Mês de Referência</label> <input type="month" id="bill-ref" class="w-full px-4 py-3 rounded-lg input-style text-white">
+       </div>
+      </div><button onclick="addBill()" id="btn-add-bill" class="mt-4 btn-primary px-6 py-3 rounded-lg font-medium w-full md:w-auto">➕ Adicionar Conta</button>
+     </div><!-- Lista de Contas Pendentes -->
+     <div class="card-glass rounded-xl p-4 md:p-6 mb-4">
+      <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">⏳ Contas Pendentes</h3>
+      <div id="pending-bills-list" class="space-y-3 max-h-96 overflow-y-auto scrollbar"></div>
+     </div><!-- Lista de Contas Pagas -->
+     <div class="card-glass rounded-xl p-4 md:p-6">
+      <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">✅ Contas Pagas</h3>
+      <div id="paid-bills-list" class="space-y-2 max-h-64 overflow-y-auto scrollbar"></div>
+     </div>
+    </div><!-- Aba Relatórios -->
+    <div id="tab-content-reports" class="animate-fade hidden">
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <!-- Resumo Geral -->
+      <div class="card-glass rounded-xl p-4 md:p-6">
+       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">📈 Resumo Geral</h3>
+       <div class="space-y-3">
+        <div class="flex justify-between items-center p-3 bg-green-500/20 rounded-lg">
+         <span class="text-gray-300">Total de Entradas</span> <span id="report-entries" class="font-bold text-green-400">R$ 0,00</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-red-500/20 rounded-lg">
+         <span class="text-gray-300">Total de Saídas</span> <span id="report-expenses" class="font-bold text-red-400">R$ 0,00</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-yellow-500/20 rounded-lg">
+         <span class="text-gray-300">Contas Pagas</span> <span id="report-paid" class="font-bold text-yellow-400">R$ 0,00</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-blue-500/20 rounded-lg">
+         <span class="text-gray-300">Saldo Atual</span> <span id="report-balance" class="font-bold text-blue-400">R$ 0,00</span>
+        </div>
+       </div>
+      </div><!-- Entradas por Categoria -->
+      <div class="card-glass rounded-xl p-4 md:p-6">
+       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">💵 Entradas por Categoria</h3>
+       <div id="entries-by-category" class="space-y-2"></div>
+      </div><!-- Saídas por Categoria -->
+      <div class="card-glass rounded-xl p-4 md:p-6">
+       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">💸 Saídas por Categoria</h3>
+       <div id="expenses-by-category" class="space-y-2"></div>
+      </div><!-- Histórico Completo -->
+      <div class="card-glass rounded-xl p-4 md:p-6">
+       <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">📋 Movimentações Recentes</h3>
+       <div id="all-movements" class="space-y-2 max-h-64 overflow-y-auto scrollbar"></div>
       </div>
-      <div id="transactions-container">
-       <p id="empty-state" class="text-center text-slate-400 py-8">Nenhuma transação registrada ainda.<br>
-         Adicione sua primeira transação acima! 🚀</p>
-      </div>
-     </div>
-    </div><!-- Reports Tab -->
-    <div id="reports-tab" class="max-w-6xl mx-auto hidden space-y-6">
-     <div class="glass rounded-2xl p-5 shadow-lg">
-      <h2 class="text-lg font-semibold text-slate-700 mb-4">📊 Relatório de Entradas</h2>
-      <div id="income-report" class="space-y-2"></div>
-     </div>
-     <div class="glass rounded-2xl p-5 shadow-lg">
-      <h2 class="text-lg font-semibold text-slate-700 mb-4">💸 Relatório de Saídas</h2>
-      <div id="expense-report" class="space-y-2"></div>
-     </div>
-     <div class="glass rounded-2xl p-5 shadow-lg">
-      <h2 class="text-lg font-semibold text-slate-700 mb-4">🧾 Relatório de Contas</h2>
-      <div id="bills-report" class="space-y-2"></div>
      </div>
     </div>
-   </div>
-  </div><!-- Delete Modal -->
-  <div id="delete-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-   <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-    <h3 class="text-lg font-semibold text-slate-800 mb-2">🗑️ Confirmar Exclusão</h3>
-    <p class="text-slate-600 mb-4">Tem certeza que deseja excluir esta transação?</p>
-    <div class="flex gap-3">
-     <button id="cancel-delete" class="flex-1 py-2 px-4 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition-colors">Cancelar</button> <button id="confirm-delete" class="flex-1 py-2 px-4 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">Excluir</button>
+   </div><!-- Modal de Pagamento Parcial -->
+   <div id="partial-payment-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 hidden">
+    <div class="card-glass rounded-xl p-6 m-4 max-w-md w-full animate-fade">
+     <h3 class="text-xl font-bold mb-4">💳 Pagar Conta</h3>
+     <p id="modal-bill-info" class="text-gray-400 mb-4"></p>
+     <div class="mb-4">
+      <label class="block text-xs text-gray-400 mb-1">Valor a Pagar (R$)</label> <input type="text" id="partial-amount" placeholder="0,00" class="w-full px-4 py-3 rounded-lg input-style text-white placeholder-gray-500 money-mask">
+     </div>
+     <div class="flex gap-3">
+      <button onclick="confirmPartialPayment()" class="flex-1 btn-success px-4 py-3 rounded-lg font-medium">✅ Confirmar</button> <button onclick="closePaymentModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 px-4 py-3 rounded-lg font-medium">❌ Cancelar</button>
+     </div>
     </div>
-   </div>
-  </div><!-- Payment Modal -->
-  <div id="payment-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
-   <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-    <h3 class="text-lg font-semibold text-slate-800 mb-4">💰 Pagamento Parcial</h3>
-    <div id="payment-info" class="space-y-3 mb-4 bg-slate-50 p-4 rounded-lg">
-     <p class="text-sm"><span class="text-slate-600">📝 Conta:</span> <span id="payment-description" class="font-semibold text-slate-800"></span></p>
-     <p class="text-sm"><span class="text-slate-600">💵 Total:</span> <span id="payment-total" class="font-semibold text-red-600"></span></p>
-     <p class="text-sm"><span class="text-slate-600">✅ Já Pago:</span> <span id="payment-paid" class="font-semibold text-green-600"></span></p>
-     <p class="text-sm"><span class="text-slate-600">❌ Resta:</span> <span id="payment-remaining" class="font-semibold text-orange-600"></span></p>
-    </div>
-    <div class="mb-4"><label class="block text-sm text-slate-600 mb-2">Quanto deseja pagar?</label> <input type="number" id="payment-amount" step="0.01" min="0" placeholder="0,00" class="w-full px-3 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-green-500 outline-none">
-    </div>
-    <div class="flex gap-3"><button id="cancel-payment" class="flex-1 py-2 px-4 bg-slate-200 hover:bg-slate-300 rounded-lg font-medium transition-colors">Cancelar</button> <button id="confirm-payment" class="flex-1 py-2 px-4 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">Confirmar</button>
-    </div>
-   </div>
+   </div><!-- Toast Container -->
+   <div id="toast-container"></div>
   </div>
   <script>
-    let allTransactions = [];
-    let currentFilter = null;
-    let pendingDeleteRecord = null;
-    let pendingPaymentRecord = null;
-    let initialBalance = 0;
-
+    // Configuração padrão
     const defaultConfig = {
-      app_title: 'Controle Financeiro Familiar',
-      initial_balance: '0'
+      app_title: 'Victor e Thayna (Contas)',
+      wallet_label: 'Carteira'
     };
 
+    let allData = [];
+    let currentBillId = null;
+
+    // Formatador de moeda
     function formatCurrency(value) {
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
     }
 
-    function formatDate(dateStr) {
-      const date = new Date(dateStr + 'T12:00:00');
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    // Parser de valor monetário
+    function parseCurrency(str) {
+      if (!str) return 0;
+      const cleaned = str.replace(/[^\d,]/g, '').replace(',', '.');
+      return parseFloat(cleaned) || 0;
     }
 
-    function getMonth(dateStr) {
-      return dateStr.substring(0, 7);
+    // Máscara de dinheiro
+    function applyMoneyMask(input) {
+      input.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        value = (parseInt(value) / 100).toFixed(2);
+        if (isNaN(value) || value === 'NaN') value = '0.00';
+        value = value.replace('.', ',');
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        e.target.value = value;
+      });
     }
 
+    // Aplicar máscaras
+    document.querySelectorAll('.money-mask').forEach(applyMoneyMask);
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-yellow-600'} text-white`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Trocar abas
     function switchTab(tab) {
-      document.getElementById('transactions-tab').classList.add('hidden');
-      document.getElementById('reports-tab').classList.add('hidden');
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      
-      if (tab === 'transactions') {
-        document.getElementById('transactions-tab').classList.remove('hidden');
-        document.querySelectorAll('.tab-button')[0].classList.add('active');
-      } else {
-        document.getElementById('reports-tab').classList.remove('hidden');
-        document.querySelectorAll('.tab-button')[1].classList.add('active');
-        renderReports();
-      }
-    }
-
-    function updateCategoryField() {
-      const type = document.getElementById('type-input').value;
-      const categoryField = document.getElementById('category-field');
-      categoryField.style.display = (type === 'income') ? 'block' : 'none';
-    }
-
-    function calculateTotals(transactions) {
-      let income = 0, expense = 0, pendingBills = 0;
-      
-      transactions.forEach(t => {
-        if (t.type === 'income') income += t.value;
-        else if (t.type === 'expense') expense += t.value;
-        else if (t.type === 'bill') {
-          if (t.paid) {
-            expense += t.value;
-          } else {
-            const remaining = t.value - (t.paid_amount || 0);
-            if (remaining > 0) pendingBills += remaining;
-          }
-        }
+      document.querySelectorAll('[id^="tab-content-"]').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-pink-600');
+        btn.classList.add('bg-white/10');
       });
-      
-      const accountBalance = initialBalance + income - expense;
-      return { income, expense, pendingBills, accountBalance };
+      document.getElementById(`tab-content-${tab}`).classList.remove('hidden');
+      document.getElementById(`tab-${tab}`).classList.remove('bg-white/10');
+      document.getElementById(`tab-${tab}`).classList.add('bg-pink-600');
     }
 
-    function groupByDate(transactions) {
-      const groups = {};
-      transactions.forEach(t => {
-        if (!groups[t.date]) groups[t.date] = [];
-        groups[t.date].push(t);
-      });
-      return groups;
+    // Formatar data
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr + 'T00:00:00');
+      return date.toLocaleDateString('pt-BR');
     }
 
-    function renderTransactions() {
-      const container = document.getElementById('transactions-container');
-      const emptyState = document.getElementById('empty-state');
-      
-      let filtered = allTransactions;
-      if (currentFilter) {
-        filtered = allTransactions.filter(t => getMonth(t.date) === currentFilter);
-      }
-
-      if (filtered.length === 0) {
-        container.innerHTML = '';
-        container.appendChild(emptyState);
-        emptyState.classList.remove('hidden');
-        document.getElementById('paid-summary').textContent = '';
-        updateDashboard([]);
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      updateDashboard(filtered);
-
-      const grouped = groupByDate(filtered);
-      const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
-
-      let html = '';
-      sortedDates.forEach(date => {
-        const dayTransactions = grouped[date];
-        const dayTotals = calculateTotals(dayTransactions);
-        
-        html += `
-          <div class="mb-4 fade-in">
-            <div class="flex items-center justify-between bg-slate-100 rounded-lg px-4 py-2 mb-2">
-              <span class="font-semibold text-slate-700">📅 ${formatDate(date)}</span>
-              <div class="flex gap-4 text-sm">
-                <span class="text-green-600 font-medium">+${formatCurrency(dayTotals.income)}</span>
-                <span class="text-red-500 font-medium">-${formatCurrency(dayTotals.expense + dayTotals.pendingBills)}</span>
-              </div>
-            </div>
-            <div class="space-y-2">
-        `;
-
-        dayTransactions.forEach(t => {
-          const isIncome = t.type === 'income';
-          const isBill = t.type === 'bill';
-          const bgClass = isIncome ? 'border-l-green-500' : isBill ? 'border-l-orange-400' : 'border-l-red-400';
-          const valueClass = isIncome ? 'text-green-600' : 'text-red-500';
-          const prefix = isIncome ? '+' : '-';
-          const remaining = isBill ? (t.value - (t.paid_amount || 0)) : 0;
-          const isPaid100 = isBill && remaining <= 0;
-          
-          html += `
-            <div class="flex items-center justify-between bg-white rounded-lg px-4 py-3 border-l-4 ${bgClass} shadow-sm hover:shadow-md transition-shadow" data-id="${t.__backendId}">
-              <div class="flex items-center gap-3 flex-1">
-                ${isBill ? `<input type="checkbox" class="checkbox-custom" ${isPaid100 ? 'checked' : ''} disabled>` : '<span class="w-5"></span>'}
-                <div class="flex-1">
-                  <p class="font-medium text-slate-700">${t.description}</p>
-                  <p class="text-xs text-slate-500">${t.category || 'Sem categoria'}</p>
-                  ${isBill && (t.paid_amount || 0) > 0 ? `<p class="text-xs text-green-600">💚 Pago: ${formatCurrency(t.paid_amount)}</p>` : ''}
-                  ${isBill && remaining > 0 ? `<p class="text-xs text-red-500">❌ Resta: ${formatCurrency(remaining)}</p>` : ''}
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="font-semibold ${valueClass}">${prefix}${formatCurrency(t.value)}</span>
-                ${isBill && !isPaid100 ? `<button onclick="showPaymentModal('${t.__backendId}')" class="text-green-500 hover:text-green-700 p-1" title="Pagar">💚</button>` : ''}
-                <button onclick="showDeleteModal('${t.__backendId}')" class="text-slate-400 hover:text-red-500 p-1">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-              </div>
-            </div>
-          `;
-        });
-
-        html += '</div></div>';
-      });
-
-      container.innerHTML = html;
+    // Ícone de categoria
+    function getCategoryIcon(category) {
+      const icons = {
+        salario: '💼', uber: '🚗', vendas: '🛒', apostas: '🎰',
+        alimentacao: '🍔', transporte: '🚗', lazer: '🎮', saude: '💊',
+        outros: '📦'
+      };
+      return icons[category] || '📦';
     }
 
-    function updateDashboard(filtered) {
-      const totals = calculateTotals(filtered);
-      document.getElementById('total-income').textContent = formatCurrency(totals.income);
-      document.getElementById('total-expense').textContent = formatCurrency(totals.expense);
-      document.getElementById('pending-bills').textContent = formatCurrency(totals.pendingBills);
-      document.getElementById('account-balance').textContent = formatCurrency(totals.accountBalance);
-
-      const bills = filtered.filter(t => t.type === 'bill' && (t.value - (t.paid_amount || 0)) > 0);
-      if (bills.length > 0) {
-        bills.sort((a, b) => a.date.localeCompare(b.date));
-        document.getElementById('next-bill').textContent = bills[0].description;
-        const remaining = bills[0].value - (bills[0].paid_amount || 0);
-        document.getElementById('remaining-balance').textContent = formatCurrency(remaining);
-      } else {
-        document.getElementById('next-bill').textContent = '✅ Nenhuma';
-        document.getElementById('remaining-balance').textContent = 'R$ 0,00';
-      }
-    }
-
-    function showDeleteModal(id) {
-      pendingDeleteRecord = allTransactions.find(t => t.__backendId === id);
-      if (pendingDeleteRecord) {
-        document.getElementById('delete-modal').classList.remove('hidden');
-      }
-    }
-
-    function hideDeleteModal() {
-      document.getElementById('delete-modal').classList.add('hidden');
-      pendingDeleteRecord = null;
-    }
-
-    async function confirmDelete() {
-      if (pendingDeleteRecord) {
-        const btn = document.getElementById('confirm-delete');
-        btn.textContent = 'Excluindo...';
-        btn.disabled = true;
-        
-        const result = await window.dataSdk.delete(pendingDeleteRecord);
-        
-        btn.textContent = 'Excluir';
-        btn.disabled = false;
-        
-        if (!result.isOk) console.error('Erro ao excluir');
-        hideDeleteModal();
-      }
-    }
-
-    function showPaymentModal(id) {
-      pendingPaymentRecord = allTransactions.find(t => t.__backendId === id);
-      if (pendingPaymentRecord) {
-        const remaining = pendingPaymentRecord.value - (pendingPaymentRecord.paid_amount || 0);
-        document.getElementById('payment-description').textContent = pendingPaymentRecord.description;
-        document.getElementById('payment-total').textContent = formatCurrency(pendingPaymentRecord.value);
-        document.getElementById('payment-paid').textContent = formatCurrency(pendingPaymentRecord.paid_amount || 0);
-        document.getElementById('payment-remaining').textContent = formatCurrency(remaining);
-        document.getElementById('payment-amount').value = '';
-        document.getElementById('payment-modal').classList.remove('hidden');
-      }
-    }
-
-    function hidePaymentModal() {
-      document.getElementById('payment-modal').classList.add('hidden');
-      pendingPaymentRecord = null;
-    }
-
-    async function confirmPayment() {
-      if (!pendingPaymentRecord) return;
-
-      const amount = parseFloat(document.getElementById('payment-amount').value);
-      const remaining = pendingPaymentRecord.value - (pendingPaymentRecord.paid_amount || 0);
-
-      if (!amount || amount <= 0) {
-        alert('Digite um valor válido');
-        return;
-      }
-      if (amount > remaining) {
-        alert(`Valor máximo: ${formatCurrency(remaining)}`);
-        return;
-      }
-
-      const btn = document.getElementById('confirm-payment');
-      btn.textContent = 'Processando...';
-      btn.disabled = true;
-
-      const newPaidAmount = (pendingPaymentRecord.paid_amount || 0) + amount;
-      pendingPaymentRecord.paid_amount = newPaidAmount;
-      if (newPaidAmount >= pendingPaymentRecord.value) {
-        pendingPaymentRecord.paid = true;
-      }
-
-      const result = await window.dataSdk.update(pendingPaymentRecord);
-
-      btn.textContent = 'Confirmar';
-      btn.disabled = false;
-
-      if (result.isOk) hidePaymentModal();
-      else console.error('Erro ao atualizar pagamento');
-    }
-
-    function renderReports() {
-      let filtered = allTransactions;
-      if (currentFilter) {
-        filtered = allTransactions.filter(t => getMonth(t.date) === currentFilter);
-      }
-
-      const income = filtered.filter(t => t.type === 'income');
-      const expense = filtered.filter(t => t.type === 'expense');
-      const bills = filtered.filter(t => t.type === 'bill');
-
-      let incomeHtml = '';
-      if (income.length === 0) {
-        incomeHtml = '<p class="text-slate-500">Nenhuma entrada registrada</p>';
-      } else {
-        const byCategory = {};
-        income.forEach(t => {
-          if (!byCategory[t.category]) byCategory[t.category] = 0;
-          byCategory[t.category] += t.value;
-        });
-        incomeHtml = Object.entries(byCategory).map(([cat, total]) => 
-          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span class="font-medium text-slate-700">${cat}</span><span class="font-semibold text-green-600">${formatCurrency(total)}</span></div>`
-        ).join('');
-        incomeHtml += `<div class="mt-3 p-3 bg-green-50 rounded-lg border border-green-200"><div class="flex justify-between items-center"><span class="font-semibold text-slate-700">Total:</span><span class="font-bold text-green-600 text-lg">${formatCurrency(income.reduce((a, b) => a + b.value, 0))}</span></div></div>`;
-      }
-      document.getElementById('income-report').innerHTML = incomeHtml;
-
-      let expenseHtml = '';
-      if (expense.length === 0) {
-        expenseHtml = '<p class="text-slate-500">Nenhuma saída registrada</p>';
-      } else {
-        expenseHtml = expense.map(t => 
-          `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-lg"><span class="font-medium text-slate-700">${t.description}</span><span class="font-semibold text-red-600">${formatCurrency(t.value)}</span></div>`
-        ).join('');
-        expenseHtml += `<div class="mt-3 p-3 bg-red-50 rounded-lg border border-red-200"><div class="flex justify-between items-center"><span class="font-semibold text-slate-700">Total:</span><span class="font-bold text-red-600 text-lg">${formatCurrency(expense.reduce((a, b) => a + b.value, 0))}</span></div></div>`;
-      }
-      document.getElementById('expense-report').innerHTML = expenseHtml;
-
-      let billsHtml = '';
-      if (bills.length === 0) {
-        billsHtml = '<p class="text-slate-500">Nenhuma conta registrada</p>';
-      } else {
-        const paid = bills.filter(b => b.paid);
-        const pending = bills.filter(b => !b.paid);
-        
-        billsHtml = '<div class="space-y-3">';
-        
-        if (pending.length > 0) {
-          billsHtml += '<h3 class="font-semibold text-slate-700">⏳ Não Iniciadas:</h3>';
-          const notStarted = pending.filter(b => !b.paid_amount || b.paid_amount === 0);
-          if (notStarted.length > 0) {
-            billsHtml += notStarted.map(t => 
-              `<div class="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-200"><span class="font-medium text-slate-700">${t.description}</span><span class="font-semibold text-orange-600">${formatCurrency(t.value)}</span></div>`
-            ).join('');
-          }
-
-          billsHtml += '<h3 class="font-semibold text-slate-700 mt-3">⚡ Pagamentos Parciais:</h3>';
-          const partial = pending.filter(b => b.paid_amount && b.paid_amount > 0);
-          if (partial.length > 0) {
-            billsHtml += partial.map(t => {
-              const pct = Math.round((t.paid_amount / t.value) * 100);
-              const remaining = t.value - t.paid_amount;
-              return `
-                <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="font-medium text-slate-700">${t.description}</span>
-                    <span class="text-xs font-semibold bg-blue-200 text-blue-800 px-2 py-1 rounded">${pct}%</span>
-                  </div>
-                  <div class="w-full bg-gray-300 rounded-full h-2 mb-2">
-                    <div class="bg-blue-500 h-2 rounded-full" style="width: ${pct}%"></div>
-                  </div>
-                  <div class="flex justify-between text-xs text-slate-600">
-                    <span>Pago: ${formatCurrency(t.paid_amount)}</span>
-                    <span>Falta: ${formatCurrency(remaining)}</span>
-                  </div>
-                </div>
-              `;
-            }).join('');
-          } else {
-            billsHtml += '<p class="text-slate-500 text-sm">Nenhum pagamento parcial</p>';
-          }
-        }
-        
-        if (paid.length > 0) {
-          billsHtml += '<h3 class="font-semibold text-slate-700 mt-3">✅ 100% Pagas:</h3>';
-          billsHtml += paid.map(t => 
-            `<div class="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-200"><span class="font-medium text-slate-700 line-through">${t.description}</span><span class="font-semibold text-green-600">${formatCurrency(t.value)}</span></div>`
-          ).join('');
-        }
-        
-        billsHtml += `<div class="mt-4 p-4 bg-slate-100 rounded-lg"><div class="grid grid-cols-3 gap-2">
-          <div><p class="text-xs text-slate-600">Total Contas</p><p class="font-bold text-slate-800">${formatCurrency(bills.reduce((a, b) => a + b.value, 0))}</p></div>
-          <div><p class="text-xs text-slate-600">Já Pago</p><p class="font-bold text-green-600">${formatCurrency(bills.reduce((a, b) => a + (b.paid_amount || 0), 0))}</p></div>
-          <div><p class="text-xs text-slate-600">Ainda Deve</p><p class="font-bold text-red-600">${formatCurrency(bills.reduce((a, b) => a + Math.max(0, b.value - (b.paid_amount || 0)), 0))}</p></div>
-        </div></div></div>`;
-      }
-      document.getElementById('bills-report').innerHTML = billsHtml;
-    }
-
+    // Data Handler
     const dataHandler = {
       onDataChanged(data) {
-        allTransactions = data;
-        renderTransactions();
+        allData = data;
+        updateUI();
       }
     };
 
-    async function onConfigChange(config) {
-      const title = config.app_title || defaultConfig.app_title;
-      document.getElementById('main-title').textContent = '💰 ' + title;
+    function updateUI() {
+      const entries = allData.filter(d => d.type === 'entry');
+      const expenses = allData.filter(d => d.type === 'expense');
+      const bills = allData.filter(d => d.type === 'bill');
+      const pendingBills = bills.filter(b => b.status === 'pending');
+      const paidBills = bills.filter(b => b.status === 'paid');
+
+      // Cálculos
+      const totalEntries = entries.reduce((sum, e) => sum + e.amount, 0);
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalPaidBills = bills.reduce((sum, b) => sum + (b.amount - b.remaining), 0);
+      const totalPending = pendingBills.reduce((sum, b) => sum + b.remaining, 0);
+      const wallet = totalEntries - totalExpenses - totalPaidBills;
+
+      // Atualizar cards
+      document.getElementById('total-wallet').textContent = formatCurrency(wallet);
+      document.getElementById('total-wallet').className = `text-lg md:text-2xl font-bold ${wallet >= 0 ? 'text-green-400' : 'text-red-400'}`;
+      document.getElementById('total-spent').textContent = formatCurrency(totalExpenses + totalPaidBills);
+      document.getElementById('total-pending').textContent = formatCurrency(totalPending);
+
+      // Próxima conta
+      const nextBill = pendingBills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date))[0];
+      const nextBillEl = document.getElementById('next-bill');
+      if (nextBill) {
+        const dueDate = new Date(nextBill.due_date + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        let urgency = '';
+        if (diffDays < 0) urgency = '⚠️ VENCIDA';
+        else if (diffDays === 0) urgency = '🔴 HOJE';
+        else if (diffDays <= 3) urgency = `🟠 ${diffDays}d`;
+        else urgency = `🟢 ${diffDays}d`;
+        nextBillEl.innerHTML = `${nextBill.description}<br><span class="text-xs">${formatCurrency(nextBill.remaining)} - ${urgency}</span>`;
+      } else {
+        nextBillEl.textContent = 'Nenhuma conta pendente';
+      }
+
+      // Listas
+      renderEntriesList(entries);
+      renderExpensesList(expenses);
+      renderPendingBills(pendingBills);
+      renderPartialBills(bills);
+      renderPaidBills(bills);
+      renderReports(entries, expenses, bills, wallet);
     }
 
-    async function init() {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('date-input').value = today;
+    function renderEntriesList(entries) {
+      const list = document.getElementById('entries-list');
+      if (entries.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma entrada registrada</p>';
+        return;
+      }
+      list.innerHTML = entries.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
+        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg" data-id="${e.__backendId}">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">${getCategoryIcon(e.category)}</span>
+            <div>
+              <p class="font-medium">${e.description}</p>
+              <p class="text-xs text-gray-400">${formatDate(e.created_at.split('T')[0])}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-green-400">${formatCurrency(e.amount)}</span>
+            <button onclick="deleteRecord('${e.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderExpensesList(expenses) {
+      const list = document.getElementById('expenses-list');
+      if (expenses.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma saída registrada</p>';
+        return;
+      }
+      list.innerHTML = expenses.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(e => `
+        <div class="flex justify-between items-center p-3 bg-red-500/10 rounded-lg" data-id="${e.__backendId}">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">${getCategoryIcon(e.category)}</span>
+            <div>
+              <p class="font-medium">${e.description}</p>
+              <p class="text-xs text-gray-400">${formatDate(e.created_at.split('T')[0])}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-red-400">-${formatCurrency(e.amount)}</span>
+            <button onclick="deleteRecord('${e.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderPendingBills(bills) {
+      const list = document.getElementById('pending-bills-list');
+      if (bills.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">🎉 Todas as contas estão pagas!</p>';
+        return;
+      }
+      const sortedBills = bills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+      list.innerHTML = sortedBills.map(b => {
+        const dueDate = new Date(b.due_date + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        let statusClass = 'border-green-500/30';
+        let statusText = `Vence em ${diffDays} dias`;
+        if (diffDays < 0) {
+          statusClass = 'border-red-500 bg-red-500/20';
+          statusText = `⚠️ VENCIDA há ${Math.abs(diffDays)} dias`;
+        } else if (diffDays === 0) {
+          statusClass = 'border-orange-500 bg-orange-500/20';
+          statusText = '🔴 VENCE HOJE';
+        } else if (diffDays <= 3) {
+          statusClass = 'border-yellow-500 bg-yellow-500/10';
+          statusText = `🟠 Vence em ${diffDays} dias`;
+        }
+
+        return `
+          <div class="p-4 rounded-xl border ${statusClass} bg-white/5" data-id="${b.__backendId}">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h4 class="font-semibold text-lg">${b.description}</h4>
+                <p class="text-xs text-gray-400">Ref: ${b.reference_date || '-'} | Venc: ${formatDate(b.due_date)}</p>
+                <p class="text-xs ${diffDays <= 0 ? 'text-red-400' : diffDays <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${statusText}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xl font-bold text-yellow-400">${formatCurrency(b.remaining)}</p>
+                <p class="text-xs text-gray-400">Valor Total</p>
+              </div>
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="payFullBill('${b.__backendId}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Pagar Total</button>
+              <button onclick="openPaymentModal('${b.__backendId}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Parcial</button>
+              <button onclick="deleteRecord('${b.__backendId}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPartialBills(bills) {
+      const partialBills = bills.filter(b => b.status === 'pending' && b.remaining < b.amount);
+      const list = document.getElementById('partial-bills-list');
+      if (partialBills.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma conta parcialmente paga</p>';
+        return;
+      }
+      const sortedBills = partialBills.sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+      list.innerHTML = sortedBills.map(b => {
+        const paidAmount = b.amount - b.remaining;
+        const percentagePaid = Math.round((paidAmount / b.amount) * 100);
+        const dueDate = new Date(b.due_date + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+        let statusClass = 'border-blue-500/30';
+        let statusText = `Vence em ${diffDays} dias`;
+        if (diffDays < 0) {
+          statusClass = 'border-red-500 bg-red-500/20';
+          statusText = `⚠️ VENCIDA há ${Math.abs(diffDays)} dias`;
+        } else if (diffDays === 0) {
+          statusClass = 'border-orange-500 bg-orange-500/20';
+          statusText = '🔴 VENCE HOJE';
+        } else if (diffDays <= 3) {
+          statusClass = 'border-yellow-500 bg-yellow-500/10';
+          statusText = `🟠 Vence em ${diffDays} dias`;
+        }
+
+        return `
+          <div class="p-4 rounded-xl border ${statusClass} bg-white/5" data-id="${b.__backendId}">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1">
+                <h4 class="font-semibold text-lg">${b.description}</h4>
+                <p class="text-xs text-gray-400">Ref: ${b.reference_date || '-'} | Venc: ${formatDate(b.due_date)}</p>
+                <p class="text-xs ${diffDays <= 0 ? 'text-red-400' : diffDays <= 3 ? 'text-yellow-400' : 'text-gray-400'}">${statusText}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-2xl font-bold text-blue-400">${percentagePaid}%</p>
+                <p class="text-xs text-gray-400">Completo</p>
+              </div>
+            </div>
+            <div class="mb-3">
+              <div class="flex justify-between mb-1 text-xs">
+                <span class="text-gray-400">Progresso</span>
+                <span class="text-blue-400">${formatCurrency(paidAmount)} / ${formatCurrency(b.amount)}</span>
+              </div>
+              <div class="w-full bg-gray-700 rounded-full h-2.5">
+                <div class="bg-blue-500 h-2.5 rounded-full transition-all" style="width: ${percentagePaid}%"></div>
+              </div>
+            </div>
+            <p class="text-sm text-orange-400 mb-3">💛 Faltam ${formatCurrency(b.remaining)} para completar</p>
+            <div class="flex gap-2 flex-wrap">
+              <button onclick="payFullBill('${b.__backendId}')" class="flex-1 btn-success px-3 py-2 rounded-lg text-sm font-medium">✅ Completar</button>
+              <button onclick="openPaymentModal('${b.__backendId}')" class="flex-1 btn-warning px-3 py-2 rounded-lg text-sm font-medium text-gray-900">💳 Pagar Mais</button>
+              <button onclick="deleteRecord('${b.__backendId}')" class="px-3 py-2 rounded-lg text-sm bg-red-500/20 hover:bg-red-500/40 text-red-400">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderPaidBills(bills) {
+      const fullyPaidBills = bills.filter(b => b.status === 'paid' && b.remaining === 0);
+      const list = document.getElementById('paid-bills-list');
+      if (fullyPaidBills.length === 0) {
+        list.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma conta totalmente paga</p>';
+        return;
+      }
+      list.innerHTML = fullyPaidBills.sort((a, b) => new Date(b.paid_at) - new Date(a.paid_at)).map(b => `
+        <div class="flex justify-between items-center p-3 bg-green-500/10 rounded-lg" data-id="${b.__backendId}">
+          <div>
+            <p class="font-medium">${b.description}</p>
+            <p class="text-xs text-gray-400">Pago em: ${formatDate(b.paid_at?.split('T')[0])}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-green-400">${formatCurrency(b.amount)}</span>
+            <button onclick="deleteRecord('${b.__backendId}')" class="text-red-400 hover:text-red-300 p-1">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderReports(entries, expenses, bills, wallet) {
+      const totalEntries = entries.reduce((sum, e) => sum + e.amount, 0);
+      const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const totalPaid = bills.reduce((sum, b) => sum + (b.amount - b.remaining), 0);
+
+      document.getElementById('report-entries').textContent = formatCurrency(totalEntries);
+      document.getElementById('report-expenses').textContent = formatCurrency(totalExpenses);
+      document.getElementById('report-paid').textContent = formatCurrency(totalPaid);
+      document.getElementById('report-balance').textContent = formatCurrency(wallet);
+
+      // Entradas por categoria
+      const entriesByCategory = entries.reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount;
+        return acc;
+      }, {});
+      const entriesCatEl = document.getElementById('entries-by-category');
+      if (Object.keys(entriesByCategory).length === 0) {
+        entriesCatEl.innerHTML = '<p class="text-gray-500 text-center py-2">Sem dados</p>';
+      } else {
+        entriesCatEl.innerHTML = Object.entries(entriesByCategory).map(([cat, val]) => `
+          <div class="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+            <span class="flex items-center gap-2">${getCategoryIcon(cat)} ${cat}</span>
+            <span class="font-medium text-green-400">${formatCurrency(val)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Saídas por categoria
+      const expensesByCategory = expenses.reduce((acc, e) => {
+        acc[e.category] = (acc[e.category] || 0) + e.amount;
+        return acc;
+      }, {});
+      const expensesCatEl = document.getElementById('expenses-by-category');
+      if (Object.keys(expensesByCategory).length === 0) {
+        expensesCatEl.innerHTML = '<p class="text-gray-500 text-center py-2">Sem dados</p>';
+      } else {
+        expensesCatEl.innerHTML = Object.entries(expensesByCategory).map(([cat, val]) => `
+          <div class="flex justify-between items-center p-2 bg-white/5 rounded-lg">
+            <span class="flex items-center gap-2">${getCategoryIcon(cat)} ${cat}</span>
+            <span class="font-medium text-red-400">${formatCurrency(val)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Movimentações recentes
+      const allMovements = [
+        ...entries.map(e => ({ ...e, moveType: 'entry' })),
+        ...expenses.map(e => ({ ...e, moveType: 'expense' })),
+        ...bills.filter(b => b.status === 'paid').map(b => ({ ...b, moveType: 'bill' }))
+      ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 10);
+
+      const movementsEl = document.getElementById('all-movements');
+      if (allMovements.length === 0) {
+        movementsEl.innerHTML = '<p class="text-gray-500 text-center py-2">Sem movimentações</p>';
+      } else {
+        movementsEl.innerHTML = allMovements.map(m => {
+          const isPositive = m.moveType === 'entry';
+          return `
+            <div class="flex justify-between items-center p-2 ${isPositive ? 'bg-green-500/10' : 'bg-red-500/10'} rounded-lg">
+              <span class="text-sm">${m.description}</span>
+              <span class="font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}">${isPositive ? '+' : '-'}${formatCurrency(m.amount)}</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // Adicionar entrada
+    async function addEntry() {
+      const desc = document.getElementById('entry-desc').value.trim();
+      const category = document.getElementById('entry-category').value;
+      const amount = parseCurrency(document.getElementById('entry-amount').value);
+
+      if (!desc || amount <= 0) {
+        showToast('Preencha todos os campos corretamente!', 'error');
+        return;
+      }
+
+      if (allData.length >= 999) {
+        showToast('Limite de 999 registros atingido!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-add-entry');
+      btn.disabled = true;
+      btn.textContent = '⏳ Salvando...';
+
+      const result = await window.dataSdk.create({
+        type: 'entry',
+        description: desc,
+        amount: amount,
+        remaining: 0,
+        category: category,
+        due_date: '',
+        reference_date: '',
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        paid_at: ''
+      });
+
+      btn.disabled = false;
+      btn.textContent = '➕ Adicionar Entrada';
+
+      if (result.isOk) {
+        showToast('Entrada adicionada com sucesso!');
+        document.getElementById('entry-desc').value = '';
+        document.getElementById('entry-amount').value = '';
+      } else {
+        showToast('Erro ao salvar entrada!', 'error');
+      }
+    }
+
+    // Adicionar saída
+    async function addExpense() {
+      const desc = document.getElementById('expense-desc').value.trim();
+      const category = document.getElementById('expense-category').value;
+      const amount = parseCurrency(document.getElementById('expense-amount').value);
+
+      if (!desc || amount <= 0) {
+        showToast('Preencha todos os campos corretamente!', 'error');
+        return;
+      }
+
+      if (allData.length >= 999) {
+        showToast('Limite de 999 registros atingido!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-add-expense');
+      btn.disabled = true;
+      btn.textContent = '⏳ Salvando...';
+
+      const result = await window.dataSdk.create({
+        type: 'expense',
+        description: desc,
+        amount: amount,
+        remaining: 0,
+        category: category,
+        due_date: '',
+        reference_date: '',
+        status: 'completed',
+        created_at: new Date().toISOString(),
+        paid_at: ''
+      });
+
+      btn.disabled = false;
+      btn.textContent = '➕ Adicionar Saída';
+
+      if (result.isOk) {
+        showToast('Saída registrada com sucesso!');
+        document.getElementById('expense-desc').value = '';
+        document.getElementById('expense-amount').value = '';
+      } else {
+        showToast('Erro ao salvar saída!', 'error');
+      }
+    }
+
+    // Adicionar conta
+    async function addBill() {
+      const desc = document.getElementById('bill-desc').value.trim();
+      const amount = parseCurrency(document.getElementById('bill-amount').value);
+      const dueDate = document.getElementById('bill-due').value;
+      const refDate = document.getElementById('bill-ref').value;
+
+      if (!desc || amount <= 0 || !dueDate) {
+        showToast('Preencha descrição, valor e data de vencimento!', 'error');
+        return;
+      }
+
+      if (allData.length >= 999) {
+        showToast('Limite de 999 registros atingido!', 'error');
+        return;
+      }
+
+      const btn = document.getElementById('btn-add-bill');
+      btn.disabled = true;
+      btn.textContent = '⏳ Salvando...';
+
+      const result = await window.dataSdk.create({
+        type: 'bill',
+        description: desc,
+        amount: amount,
+        remaining: amount,
+        category: 'conta',
+        due_date: dueDate,
+        reference_date: refDate,
+        status: 'pending',
+        created_at: new Date().toISOString(),
+        paid_at: ''
+      });
+
+      btn.disabled = false;
+      btn.textContent = '➕ Adicionar Conta';
+
+      if (result.isOk) {
+        showToast('Conta adicionada com sucesso!');
+        document.getElementById('bill-desc').value = '';
+        document.getElementById('bill-amount').value = '';
+        document.getElementById('bill-due').value = '';
+        document.getElementById('bill-ref').value = '';
+      } else {
+        showToast('Erro ao salvar conta!', 'error');
+      }
+    }
+
+    // Pagar conta total
+    async function payFullBill(id) {
+      const bill = allData.find(d => d.__backendId === id);
+      if (!bill) return;
+
+      const updatedBill = { ...bill, remaining: 0, status: 'paid', paid_at: new Date().toISOString() };
+      const result = await window.dataSdk.update(updatedBill);
+
+      if (result.isOk) {
+        showToast(`Conta "${bill.description}" paga com sucesso!`);
+      } else {
+        showToast('Erro ao pagar conta!', 'error');
+      }
+    }
+
+    // Abrir modal de pagamento parcial
+    function openPaymentModal(id) {
+      currentBillId = id;
+      const bill = allData.find(d => d.__backendId === id);
+      if (!bill) return;
+
+      document.getElementById('modal-bill-info').innerHTML = `
+        <strong>${bill.description}</strong><br>
+        Valor restante: <span class="text-yellow-400">${formatCurrency(bill.remaining)}</span>
+      `;
+      document.getElementById('partial-amount').value = '';
+      document.getElementById('partial-payment-modal').classList.remove('hidden');
       
-      const currentMonth = today.substring(0, 7);
-      document.getElementById('month-filter').value = currentMonth;
-      currentFilter = currentMonth;
+      // Reaplicar máscara
+      const input = document.getElementById('partial-amount');
+      applyMoneyMask(input);
+    }
 
-      document.getElementById('month-filter').addEventListener('change', (e) => {
-        currentFilter = e.target.value || null;
-        renderTransactions();
-      });
+    function closePaymentModal() {
+      currentBillId = null;
+      document.getElementById('partial-payment-modal').classList.add('hidden');
+    }
 
-      document.getElementById('show-all-btn').addEventListener('click', () => {
-        currentFilter = null;
-        document.getElementById('month-filter').value = '';
-        renderTransactions();
-      });
+    // Confirmar pagamento parcial
+    async function confirmPartialPayment() {
+      if (!currentBillId) return;
 
-      document.getElementById('set-balance-btn').addEventListener('click', () => {
-        const value = parseFloat(document.getElementById('initial-balance-input').value) || 0;
-        initialBalance = value;
-        renderTransactions();
-      });
+      const bill = allData.find(d => d.__backendId === currentBillId);
+      if (!bill) return;
 
-      updateCategoryField();
+      const paymentAmount = parseCurrency(document.getElementById('partial-amount').value);
 
-      document.getElementById('transaction-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (allTransactions.length >= 999) {
-          alert('Limite de 999 transações atingido');
-          return;
+      if (paymentAmount <= 0) {
+        showToast('Digite um valor válido!', 'error');
+        return;
+      }
+
+      if (paymentAmount > bill.remaining) {
+        showToast('O valor não pode ser maior que o restante!', 'error');
+        return;
+      }
+
+      const newRemaining = bill.remaining - paymentAmount;
+      const isPaid = newRemaining <= 0;
+
+      const updatedBill = {
+        ...bill,
+        remaining: Math.max(0, newRemaining),
+        status: isPaid ? 'paid' : 'pending',
+        paid_at: isPaid ? new Date().toISOString() : bill.paid_at
+      };
+
+      const result = await window.dataSdk.update(updatedBill);
+
+      if (result.isOk) {
+        if (isPaid) {
+          showToast(`Conta "${bill.description}" quitada!`);
+        } else {
+          showToast(`Pagamento de ${formatCurrency(paymentAmount)} registrado! Resta ${formatCurrency(newRemaining)}`);
         }
+        closePaymentModal();
+      } else {
+        showToast('Erro ao processar pagamento!', 'error');
+      }
+    }
 
-        const btn = document.getElementById('submit-btn');
-        btn.textContent = 'Adicionando...';
-        btn.disabled = true;
+    // Deletar registro
+    async function deleteRecord(id) {
+      const record = allData.find(d => d.__backendId === id);
+      if (!record) return;
 
-        const newTransaction = {
-          id: Date.now().toString(),
-          type: document.getElementById('type-input').value,
-          description: document.getElementById('description-input').value.trim(),
-          value: parseFloat(document.getElementById('value-input').value),
-          date: document.getElementById('date-input').value,
-          category: document.getElementById('category-input').value || '',
-          paid: false,
-          paid_amount: 0,
-          createdAt: new Date().toISOString()
-        };
+      // Confirmação inline via toast especial
+      const container = document.getElementById('toast-container');
+      const confirmToast = document.createElement('div');
+      confirmToast.className = 'toast bg-gray-800 text-white flex flex-col gap-2';
+      confirmToast.innerHTML = `
+        <p>Excluir "${record.description}"?</p>
+        <div class="flex gap-2">
+          <button id="confirm-delete-${id}" class="px-3 py-1 bg-red-600 rounded text-sm">Sim</button>
+          <button id="cancel-delete-${id}" class="px-3 py-1 bg-gray-600 rounded text-sm">Não</button>
+        </div>
+      `;
+      container.appendChild(confirmToast);
 
-        const result = await window.dataSdk.create(newTransaction);
-        
-        btn.textContent = 'Adicionar';
-        btn.disabled = false;
-
+      document.getElementById(`confirm-delete-${id}`).onclick = async () => {
+        confirmToast.remove();
+        const result = await window.dataSdk.delete(record);
         if (result.isOk) {
-          document.getElementById('description-input').value = '';
-          document.getElementById('value-input').value = '';
+          showToast('Registro excluído!');
+        } else {
+          showToast('Erro ao excluir!', 'error');
         }
-      });
+      };
 
-      document.getElementById('cancel-delete').addEventListener('click', hideDeleteModal);
-      document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
-      document.getElementById('delete-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'delete-modal') hideDeleteModal();
-      });
+      document.getElementById(`cancel-delete-${id}`).onclick = () => {
+        confirmToast.remove();
+      };
 
-      document.getElementById('cancel-payment').addEventListener('click', hidePaymentModal);
-      document.getElementById('confirm-payment').addEventListener('click', confirmPayment);
-      document.getElementById('payment-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'payment-modal') hidePaymentModal();
-      });
+      setTimeout(() => confirmToast.remove(), 5000);
+    }
 
+    // Element SDK
+    async function onConfigChange(config) {
+      document.getElementById('main-title').textContent = config.app_title || defaultConfig.app_title;
+      document.getElementById('wallet-title').textContent = config.wallet_label || defaultConfig.wallet_label;
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ['app_title', config.app_title || defaultConfig.app_title],
+        ['wallet_label', config.wallet_label || defaultConfig.wallet_label]
+      ]);
+    }
+
+    // Inicialização
+    async function init() {
       if (window.elementSdk) {
         window.elementSdk.init({
           defaultConfig,
           onConfigChange,
-          mapToCapabilities: () => ({ recolorables: [], borderables: [], fontEditable: undefined, fontSizeable: undefined }),
-          mapToEditPanelValues: (config) => new Map([
-            ['app_title', config.app_title || defaultConfig.app_title],
-            ['initial_balance', config.initial_balance || defaultConfig.initial_balance]
-          ])
+          mapToCapabilities,
+          mapToEditPanelValues
         });
       }
 
-      const initResult = await window.dataSdk.init(dataHandler);
-      if (!initResult.isOk) console.error('Erro ao inicializar Data SDK');
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error('Erro ao inicializar Data SDK');
+        }
+      }
     }
 
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28b66485ca62a1',t:'MTc3MTg3MDU2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28c9d8435f62a1',t:'MTc3MTg3MTM2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
