@@ -3,7 +3,7 @@
  <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Controle Financeiro Victor e Thayna</title>
+  <title>Controle Financeiro Familiar</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="/_sdk/element_sdk.js"></script>
   <script src="/_sdk/data_sdk.js"></script>
@@ -27,10 +27,9 @@
  </head>
  <body class="h-full bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
   <div id="app" class="h-full overflow-auto">
-   <div class="min-h-full p-4 md:p-6 lg:p-8">
-    <!-- Header -->
+   <div class="min-h-full p-4 md:p-6 lg:p-8"><!-- Header -->
     <header class="text-center mb-6">
-     <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Victor e Thayna</h1>
+     <h1 id="main-title" class="text-2xl md:text-3xl font-bold text-slate-800">💰 Controle Financeiro Familiar</h1>
      <p class="text-slate-500 mt-1">Gerencie entradas, saídas e contas com facilidade</p>
     </header><!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-6xl mx-auto">
@@ -107,7 +106,7 @@
       </div>
       <div id="transactions-container">
        <p id="empty-state" class="text-center text-slate-400 py-8">Nenhuma transação registrada ainda.<br>
-         Adicione sua primeira transação acima! 🚀</p>
+        Adicione sua primeira transação acima! 🚀</p>
       </div>
      </div>
     </div><!-- Reports Tab -->
@@ -126,6 +125,17 @@
      </div>
     </div>
    </div>
+  </div><!-- Notification Modal -->
+  <div id="notification-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
+   <div id="notification-content" class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-bounce-in">
+    <div class="flex items-start gap-4">
+     <div id="notification-icon" class="text-3xl flex-shrink-0"></div>
+     <div class="flex-1">
+      <h3 id="notification-title" class="text-lg font-semibold text-slate-800 mb-1"></h3>
+      <p id="notification-message" class="text-slate-600 text-sm break-words"></p>
+     </div>
+    </div><button onclick="closeNotification()" class="w-full mt-4 py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors">OK</button>
+   </div>
   </div><!-- Delete Confirmation Modal -->
   <div id="delete-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 hidden">
    <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
@@ -142,11 +152,27 @@
     let currentFilter = null;
     let pendingDeleteRecord = null;
     let initialBalance = 0;
+    let isSubmitting = false;
 
     const defaultConfig = {
       app_title: 'Controle Financeiro Familiar',
       initial_balance: '0'
     };
+
+    // Show notification
+    function showNotification(icon, title, message) {
+      document.getElementById('notification-icon').textContent = icon;
+      document.getElementById('notification-title').textContent = title;
+      document.getElementById('notification-message').textContent = message;
+      document.getElementById('notification-modal').classList.remove('hidden');
+      document.getElementById('notification-modal').classList.add('flex');
+    }
+
+    // Close notification
+    function closeNotification() {
+      document.getElementById('notification-modal').classList.add('hidden');
+      document.getElementById('notification-modal').classList.remove('flex');
+    }
 
     // Format currency
     function formatCurrency(value) {
@@ -317,21 +343,15 @@
     async function togglePaid(id, paid) {
       const record = allTransactions.find(t => t.__backendId === id);
       if (record) {
-        const btn = event.target;
-        btn.disabled = true;
-        
+        const oldPaid = record.paid;
         record.paid = paid;
         const result = await window.dataSdk.update(record);
-        
-        btn.disabled = false;
-        
         if (result.isOk) {
-          showNotification('paid', 'Conta Marcada', `✨ "${record.description}" foi marcada como ${paid ? 'paga' : 'pendente'}`);
+          showNotification(paid ? '✅' : '⏳', paid ? 'Conta Paga!' : 'Conta Despagada', `${record.description} marcada como ${paid ? 'paga' : 'pendente'}`);
         } else {
-          record.paid = !paid;
+          record.paid = oldPaid;
           renderTransactions();
-          const errorMsg = result.error?.message || 'Erro desconhecido ao atualizar conta';
-          showNotification('error', 'Erro ao Atualizar', 'Não foi possível atualizar a conta', errorMsg);
+          showNotification('❌', 'Erro', `Erro ao atualizar: ${result.error.message}`);
         }
       }
     }
@@ -359,61 +379,18 @@
         btn.textContent = 'Excluindo...';
         btn.disabled = true;
         
-        const description = pendingDeleteRecord.description;
         const result = await window.dataSdk.delete(pendingDeleteRecord);
         
         btn.textContent = 'Excluir';
         btn.disabled = false;
         
         if (result.isOk) {
-          showNotification('deleted', 'Deletado com Sucesso', `🗑️ "${description}" foi removido`);
+          showNotification('🗑️', 'Transação Excluída', `${pendingDeleteRecord.description} foi removida com sucesso`);
         } else {
-          const errorMsg = result.error?.message || 'Erro desconhecido';
-          showNotification('error', 'Erro ao Deletar', 'Não foi possível deletar a transação', errorMsg);
+          showNotification('❌', 'Erro', `Erro ao excluir: ${result.error.message}`);
         }
         hideDeleteModal();
       }
-    }
-
-    // Show notification modal
-    function showNotification(type, title, message, errorMessage = null) {
-      const modal = document.getElementById('notification-modal');
-      const icon = document.getElementById('notification-icon');
-      const titleEl = document.getElementById('notification-title');
-      const messageEl = document.getElementById('notification-message');
-      const errorDetails = document.getElementById('error-details');
-      const content = document.getElementById('notification-content');
-
-      // Set type-specific styling
-      const types = {
-        success: { icon: '✅', color: 'bg-green-50', borderColor: 'border-green-200' },
-        error: { icon: '❌', color: 'bg-red-50', borderColor: 'border-red-200' },
-        info: { icon: 'ℹ️', color: 'bg-blue-50', borderColor: 'border-blue-200' },
-        paid: { icon: '💳', color: 'bg-emerald-50', borderColor: 'border-emerald-200' },
-        deleted: { icon: '🗑️', color: 'bg-orange-50', borderColor: 'border-orange-200' }
-      };
-
-      const typeInfo = types[type] || types.info;
-      icon.textContent = typeInfo.icon;
-      content.className = `${typeInfo.color} border ${typeInfo.borderColor} rounded-2xl p-6 max-w-sm w-full shadow-2xl text-center`;
-
-      titleEl.textContent = title;
-      messageEl.textContent = message;
-
-      if (errorMessage) {
-        errorDetails.textContent = errorMessage;
-        errorDetails.classList.remove('hidden');
-      } else {
-        errorDetails.classList.add('hidden');
-      }
-
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-    }
-
-    function closeNotification() {
-      document.getElementById('notification-modal').classList.add('hidden');
-      document.getElementById('notification-modal').classList.remove('flex');
     }
 
     // Render reports
@@ -566,40 +543,47 @@
       document.getElementById('transaction-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        if (isSubmitting) return;
+
         if (allTransactions.length >= 999) {
-          showNotification('error', 'Limite Atingido', 'Você chegou ao máximo de 999 transações', 'Por favor, exclua algumas transações antigas');
+          showNotification('⚠️', 'Limite Atingido', 'Máximo de 999 transações. Exclua algumas antigas.');
           return;
         }
 
+        isSubmitting = true;
         const btn = document.getElementById('submit-btn');
-        const originalText = btn.textContent;
         btn.textContent = 'Adicionando...';
         btn.disabled = true;
 
-        const newTransaction = {
-          id: Date.now().toString(),
-          type: document.getElementById('type-input').value,
-          description: document.getElementById('description-input').value.trim(),
-          value: parseFloat(document.getElementById('value-input').value),
-          date: document.getElementById('date-input').value,
-          category: document.getElementById('category-input').value,
-          paid: false,
-          createdAt: new Date().toISOString()
-        };
+        try {
+          const newTransaction = {
+            id: Date.now().toString(),
+            type: document.getElementById('type-input').value,
+            description: document.getElementById('description-input').value.trim(),
+            value: parseFloat(document.getElementById('value-input').value),
+            date: document.getElementById('date-input').value,
+            category: document.getElementById('category-input').value,
+            paid: false,
+            createdAt: new Date().toISOString()
+          };
 
-        const result = await window.dataSdk.create(newTransaction);
-        
-        btn.textContent = originalText;
-        btn.disabled = false;
-
-        if (result.isOk) {
-          const typeLabel = newTransaction.type === 'income' ? 'Entrada' : newTransaction.type === 'expense' ? 'Saída' : 'Conta';
-          showNotification('success', 'Adicionado com Sucesso', `✅ ${typeLabel} "${newTransaction.description}" foi registrada`, null);
-          document.getElementById('description-input').value = '';
-          document.getElementById('value-input').value = '';
-        } else {
-          const errorMsg = result.error?.message || 'Erro desconhecido ao adicionar transação';
-          showNotification('error', 'Erro ao Adicionar', 'Não foi possível adicionar a transação', errorMsg);
+          const result = await window.dataSdk.create(newTransaction);
+          
+          if (result.isOk) {
+            showNotification('✅', 'Transação Adicionada!', `${newTransaction.description} foi adicionada com sucesso`);
+            document.getElementById('transaction-form').reset();
+            document.getElementById('date-input').value = today;
+            document.getElementById('type-input').value = 'income';
+            updateCategoryField();
+          } else {
+            showNotification('❌', 'Erro ao Adicionar', `${result.error.message}`);
+          }
+        } catch (error) {
+          showNotification('❌', 'Erro', error.message);
+        } finally {
+          btn.textContent = 'Adicionar';
+          btn.disabled = false;
+          isSubmitting = false;
         }
       });
 
@@ -608,12 +592,6 @@
       document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
       document.getElementById('delete-modal').addEventListener('click', (e) => {
         if (e.target.id === 'delete-modal') hideDeleteModal();
-      });
-
-      // Notification modal
-      document.getElementById('close-notification').addEventListener('click', closeNotification);
-      document.getElementById('notification-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'notification-modal') closeNotification();
       });
 
       // Element SDK
@@ -638,10 +616,18 @@
       const initResult = await window.dataSdk.init(dataHandler);
       if (!initResult.isOk) {
         console.error('Failed to initialize Data SDK');
+        showNotification('❌', 'Erro', 'Falha ao inicializar o sistema de dados');
       }
     }
 
+    // Close notification on backdrop click
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'notification-modal') {
+        closeNotification();
+      }
+    });
+
     init();
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d28942c913b62a1',t:'MTc3MTg2OTE2NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d289c09905962a1',t:'MTc3MTg2OTQ4Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
